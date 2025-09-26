@@ -17,9 +17,10 @@ A modern web application for artificial insemination education and training, bui
 
 - **Frontend**: React 18, TypeScript, Vite
 - **Styling**: Tailwind CSS, Radix UI
-- **Backend**: Supabase
-- **Authentication**: Supabase Auth
-- **Database**: Supabase PostgreSQL
+- **Backend**: Firebase
+- **Authentication**: Firebase Auth
+- **Database**: Firestore
+- **Storage**: Firebase Storage
 - **Deployment**: Vercel/Netlify
 
 ## Getting Started
@@ -28,7 +29,7 @@ A modern web application for artificial insemination education and training, bui
 
 - Node.js 18+ 
 - npm or yarn
-- Supabase account (for backend services)
+- Firebase account (for backend services)
 
 ### Installation
 
@@ -50,8 +51,12 @@ cp env.example .env.local
 
 4. Configure your environment variables in `.env.local`:
 ```env
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+VITE_FIREBASE_API_KEY=your_firebase_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id_here
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id_here
+VITE_FIREBASE_APP_ID=your_app_id_here
 ```
 
 5. Start the development server:
@@ -60,6 +65,10 @@ npm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
+
+### Firebase Setup
+
+This project uses Firebase for authentication, database, and storage. Follow the detailed setup guide in [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) to configure your Firebase project.
 
 ## Available Scripts
 
