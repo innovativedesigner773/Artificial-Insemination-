@@ -27,7 +27,12 @@ import {
   ChevronDown,
   Award,
   Target,
-  Zap
+  Zap,
+  Shield,
+  BarChart3,
+  Users,
+  Database,
+  FileText
 } from 'lucide-react'
 
 interface NavigationProps {
@@ -39,11 +44,26 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
   const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'text-blue-500' },
-    { id: 'courses', label: 'Courses', icon: BookOpen, color: 'text-green-500' },
-    { id: 'certificates', label: 'Certificates', icon: Trophy, color: 'text-yellow-500' },
-  ]
+  // Different navigation items for admin users
+  const getNavItems = () => {
+    if (user?.role === 'admin') {
+      return [
+        { id: 'dashboard', label: 'Admin Dashboard', icon: Shield, color: 'text-red-500' },
+        { id: 'users', label: 'Users', icon: Users, color: 'text-blue-500' },
+        { id: 'courses', label: 'Courses', icon: BookOpen, color: 'text-green-500' },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3, color: 'text-purple-500' },
+        { id: 'reports', label: 'Reports', icon: FileText, color: 'text-orange-500' },
+      ]
+    }
+    
+    return [
+      { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'text-blue-500' },
+      { id: 'courses', label: 'Courses', icon: BookOpen, color: 'text-green-500' },
+      { id: 'certificates', label: 'Certificates', icon: Trophy, color: 'text-yellow-500' },
+    ]
+  }
+
+  const navItems = getNavItems()
 
   const getUserInitials = () => {
     if (!user) return 'U'

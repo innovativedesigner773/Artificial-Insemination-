@@ -26,7 +26,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onToggleMode }: LoginFormProps) {
-  const { login, loading } = useAuth()
+  const { login, loading, user } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -43,7 +43,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
 
     try {
       await login(formData.email, formData.password)
-      toast.success('Welcome back!')
+      // Success message will be shown after user data is loaded
     } catch (error) {
       console.error('Login error:', error)
       toast.error(error instanceof Error ? error.message : 'Login failed')

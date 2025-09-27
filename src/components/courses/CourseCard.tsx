@@ -4,6 +4,7 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Progress } from '../ui/progress'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
+import { downloadBase64File } from '../../utils/firebase/database'
 import { 
   Clock, 
   BookOpen, 
@@ -22,27 +23,26 @@ import {
   ArrowRight,
   Shield,
   Lightbulb,
-  Flame
+  Flame,
+  FileText,
+  Download
 } from 'lucide-react'
 import type { Course } from '../../types'
 
 interface CourseCardProps {
   course: Course
-  onEnroll: (courseId: string) => Promise<void>
+  onGetStarted: (courseId: string) => void
   isEnrolled?: boolean
   progress?: number
 }
 
-export function CourseCard({ course, onEnroll, isEnrolled = false, progress = 0 }: CourseCardProps) {
-  const [enrolling, setEnrolling] = useState(false)
+export function CourseCard({ course, onGetStarted, isEnrolled = false, progress = 0 }: CourseCardProps) {
+  const [loading, setLoading] = useState(false)
 
-  const handleEnroll = async () => {
-    setEnrolling(true)
-    try {
-      await onEnroll(course.id)
-    } finally {
-      setEnrolling(false)
-    }
+  const handleGetStarted = () => {
+    setLoading(true)
+    onGetStarted(course.id)
+    setLoading(false)
   }
 
   const getDifficultyColor = (difficulty: string) => {
@@ -156,6 +156,44 @@ export function CourseCard({ course, onEnroll, isEnrolled = false, progress = 0 
           </div>
         )}
 
+        {/* Course Attachments */}
+        {course.attachments && course.attachments.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <h4 className="text-sm font-semibold text-gray-700">Course Materials:</h4>
+            </div>
+            <div className="space-y-2">
+              {course.attachments.slice(0, 3).map((file) => (
+                <div key={file.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-700 truncate">{file.name}</span>
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                      {Math.round(file.size / 1024)}KB
+                    </Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => downloadBase64File(file.data, file.name, file.type)}
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Download
+                  </Button>
+                </div>
+              ))}
+              {course.attachments.length > 3 && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 pl-6">
+                  <ArrowRight className="h-3 w-3" />
+                  <span>+{course.attachments.length - 3} more files</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Rating */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -188,20 +226,20 @@ export function CourseCard({ course, onEnroll, isEnrolled = false, progress = 0 
           </Button>
         ) : (
           <Button 
-            onClick={handleEnroll} 
+            onClick={handleGetStarted} 
             className="w-full h-12 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-medium hover-lift rounded-xl font-semibold"
-            disabled={enrolling}
+            disabled={loading}
           >
-            {enrolling ? (
+            {loading ? (
               <>
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Enrolling...
+                Loading...
               </>
             ) : (
               <>
-                <Zap className="h-5 w-5 mr-2" />
-                Enroll Now
-                <Sparkles className="h-4 w-4 ml-2 animate-pulse" />
+                <Play className="h-5 w-5 mr-2" />
+                Get Started
+                <ArrowRight className="h-4 w-4 ml-2" />
               </>
             )}
           </Button>

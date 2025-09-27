@@ -25,21 +25,28 @@ export interface Course {
   modules: Module[]
   published: boolean
   category: string
+  attachments?: UploadedFile[]
+  createdAt?: string
+  updatedAt?: string
+  instructorId?: string
 }
 
 export interface Module {
   id: string
   title: string
+  description?: string
   lessons: Lesson[]
+  attachments?: UploadedFile[]
 }
 
 export interface Lesson {
   id: string
   title: string
   duration: number // minutes
-  type: 'video' | 'interactive' | 'quiz' | 'text'
+  type: 'video' | 'interactive' | 'quiz' | 'text' | 'document' | 'presentation'
   content?: string
   videoUrl?: string
+  attachments?: UploadedFile[]
 }
 
 // Progress Types
@@ -114,6 +121,16 @@ export interface ApiResponse<T> {
 export interface AuthResponse {
   access_token: string
   user: User
+}
+
+// File Types
+export interface UploadedFile {
+  id: string
+  name: string
+  type: string
+  size: number
+  data: string // base64 encoded file data
+  url?: string // optional URL for downloaded files
 }
 
 // Firebase-specific types

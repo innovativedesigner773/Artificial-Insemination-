@@ -19,7 +19,8 @@ import type {
   Quiz, 
   QuizResult, 
   DashboardData,
-  Enrollment 
+  Enrollment,
+  UploadedFile 
 } from '../../types';
 
 class FirestoreService {
@@ -55,6 +56,35 @@ class FirestoreService {
       throw new Error('Course not found');
     }
     return { id: courseId, ...courseDoc.data() } as Course;
+  }
+
+  async createCourse(courseData: Omit<Course, 'id'>): Promise<Course> {
+    const courseRef = await addDoc(collection(db, 'courses'), {
+      ...courseData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      id: courseRef.id,
+      ...courseData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async updateCourse(courseId: string, updates: Partial<Course>): Promise<Course> {
+    const courseRef = doc(db, 'courses', courseId);
+    await updateDoc(courseRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+    return this.getCourse(courseId);
+  }
+
+  async deleteCourse(courseId: string): Promise<void> {
+    const courseRef = doc(db, 'courses', courseId);
+    await updateDoc(courseRef, { published: false });
   }
 
   async enrollInCourse(userId: string, courseId: string): Promise<{ message: string }> {
@@ -220,5 +250,40 @@ class FirestoreService {
     return !enrollmentSnapshot.empty;
   }
 }
+
+// Utility function to convert file to base64
+export const convertFileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:image/png;base64,")
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+// Utility function to download base64 file
+export const downloadBase64File = (base64Data: string, fileName: string, mimeType: string) => {
+  const byteCharacters = atob(base64Data);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: mimeType });
+  
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 export const firestoreService = new FirestoreService();

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { api } from '../../services/api'
+import { firestoreService } from '../../utils/firebase/database'
 import { CourseCard } from './CourseCard'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -25,7 +25,11 @@ import {
 } from 'lucide-react'
 import type { Course } from '../../types'
 
-export function CourseList() {
+interface CourseListProps {
+  onGetStarted?: (courseId: string) => void
+}
+
+export function CourseList({ onGetStarted }: CourseListProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,7 +47,7 @@ export function CourseList() {
 
   const loadCourses = async () => {
     try {
-      const coursesData = await api.getCourses()
+      const coursesData = await firestoreService.getCourses()
       setCourses(coursesData)
     } catch (error) {
       console.error('Failed to load courses:', error)
@@ -77,13 +81,11 @@ export function CourseList() {
     setFilteredCourses(filtered)
   }
 
-  const handleEnroll = async (courseId: string) => {
-    try {
-      await api.enrollInCourse(courseId)
-      toast.success('Successfully enrolled in course!')
-    } catch (error) {
-      console.error('Enrollment error:', error)
-      toast.error('Failed to enroll in course')
+  const handleGetStarted = (courseId: string) => {
+    if (onGetStarted) {
+      onGetStarted(courseId)
+    } else {
+      console.log('Navigate to course:', courseId)
     }
   }
 
@@ -246,7 +248,7 @@ export function CourseList() {
             <CourseCard 
               key={course.id} 
               course={course} 
-              onEnroll={handleEnroll}
+              onGetStarted={handleGetStarted}
             />
           ))}
         </div>
