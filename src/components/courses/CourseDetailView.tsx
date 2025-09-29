@@ -5,7 +5,7 @@ import { Badge } from '../ui/badge'
 import { Separator } from '../ui/separator'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
 import { downloadBase64File } from '../../utils/firebase/database'
-import { firestoreService } from '../../utils/firebase/database'
+import { getDummyCourseById } from '../../utils/dummyData'
 import { toast } from 'sonner'
 import { 
   ArrowLeft,
@@ -27,6 +27,7 @@ import {
   TrendingUp,
   Eye
 } from 'lucide-react'
+import { CourseFaqBot } from './CourseFaqBot'
 import type { Course } from '../../types'
 
 interface CourseDetailViewProps {
@@ -47,9 +48,9 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
   const loadCourse = async () => {
     try {
       setLoading(true)
-      const courseData = await firestoreService.getCourse(courseId)
+      const courseData = getDummyCourseById(courseId)
       setCourse(courseData)
-      if (courseData.modules.length > 0) {
+      if (courseData && courseData.modules.length > 0) {
         setSelectedModule(courseData.modules[0].id)
       }
     } catch (error) {
@@ -348,6 +349,49 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
               )}
             </>
           )}
+
+          {/* Course Roadmap */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                Course Roadmap
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {course.modules.map((m, mi) => (
+                  <div key={m.id} className="relative pl-8">
+                    <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200" />
+                    <div className="flex items-start gap-3">
+                      <div className="w-4 h-4 rounded-full bg-green-500 mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{mi + 1}. {m.title}</h4>
+                          <Badge variant="outline" className="text-xs">{m.lessons.length} lessons</Badge>
+                        </div>
+                        {m.description && (
+                          <p className="text-sm text-gray-600">{m.description}</p>
+                        )}
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {m.lessons.slice(0, 4).map((l, li) => (
+                            <div key={l.id} className="text-sm text-gray-700 flex items-center gap-2">
+                              <span className="text-gray-400">{mi + 1}.{li + 1}</span>
+                              <span className="truncate">{l.title}</span>
+                              <span className="text-gray-400">• {l.duration}m</span>
+                            </div>
+                          ))}
+                          {m.lessons.length > 4 && (
+                            <div className="text-sm text-gray-500">+{m.lessons.length - 4} more…</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -376,6 +420,19 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
                   Free to enroll
                 </span>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* FAQ Bot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-green-600" />
+                FAQs & Help
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CourseFaqBot course={course} />
             </CardContent>
           </Card>
 

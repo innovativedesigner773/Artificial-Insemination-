@@ -28,6 +28,7 @@ import {
   Download
 } from 'lucide-react'
 import type { Course } from '../../types'
+import { CourseFaqBot } from './CourseFaqBot'
 
 interface CourseCardProps {
   course: Course
@@ -214,6 +215,11 @@ export function CourseCard({ course, onGetStarted, isEnrolled = false, progress 
             <Award className="h-4 w-4" />
             <span className="text-sm font-medium">Certified</span>
           </div>
+        </div>
+
+        {/* FAQ Bot Trigger */}
+        <div className="pt-2">
+          <CourseFaqBot course={course} triggerVariant="link" />
         </div>
       </CardContent>
 

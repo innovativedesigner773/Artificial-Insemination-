@@ -46,6 +46,7 @@ import {
   Search,
   RefreshCw
 } from 'lucide-react'
+import { api } from '../../services/api'
 
 interface AdminStats {
   totalUsers: number
@@ -82,6 +83,8 @@ export function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState<any[]>([])
+  const [usersLoading, setUsersLoading] = useState(false)
 
   useEffect(() => {
     loadAdminData()
@@ -165,6 +168,25 @@ export function AdminDashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadUsers = async () => {
+    try {
+      setUsersLoading(true)
+      const all = await api.listUsers()
+      setUsers(all)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setUsersLoading(false)
+    }
+  }
+  
+  useEffect(() => { loadUsers() }, [])
+
+  const changeRole = async (userId: string, role: 'student' | 'instructor' | 'admin') => {
+    await api.setUserRole(userId, role)
+    await loadUsers()
   }
 
   const formatCurrency = (amount: number) => {
@@ -343,6 +365,54 @@ export function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Users Management */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5" /> Users
+          </h2>
+          <Button variant="outline" size="sm" onClick={loadUsers} className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
+        </div>
+        <div className="overflow-x-auto -mx-4 md:mx-0">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Role</th>
+                <th className="px-4 py-2">Organization</th>
+                <th className="px-4 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usersLoading ? (
+                <tr><td className="px-4 py-4" colSpan={5}>Loading users…</td></tr>
+              ) : users.length === 0 ? (
+                <tr><td className="px-4 py-4" colSpan={5}>No users found.</td></tr>
+              ) : (
+                users.map(u => (
+                  <tr key={u.id} className="border-t">
+                    <td className="px-4 py-2">{u.firstName} {u.lastName}</td>
+                    <td className="px-4 py-2">{u.email || '—'}</td>
+                    <td className="px-4 py-2">
+                      <Badge variant="outline">{u.role}</Badge>
+                    </td>
+                    <td className="px-4 py-2">{u.organization || '—'}</td>
+                    <td className="px-4 py-2 space-x-2">
+                      <Button size="sm" variant="outline" onClick={() => changeRole(u.id, 'student')}>Make Student</Button>
+                      <Button size="sm" variant="outline" onClick={() => changeRole(u.id, 'instructor')}>Make Instructor</Button>
+                      <Button size="sm" onClick={() => changeRole(u.id, 'admin')}>Make Admin</Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

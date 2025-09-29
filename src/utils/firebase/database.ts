@@ -33,6 +33,22 @@ class FirestoreService {
     return { id: userId, ...userDoc.data() } as User;
   }
 
+  // Admin: List and manage users
+  async getAllUsers(): Promise<User[]> {
+    const usersSnapshot = await getDocs(collection(db, 'users'))
+    return usersSnapshot.docs.map(d => ({ id: d.id, email: '', firstName: d.data().firstName || '', lastName: d.data().lastName || '', role: d.data().role || 'student', organization: d.data().organization, created_at: d.data().created_at })) as User[]
+  }
+
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
+    const userRef = doc(db, 'users', userId)
+    await updateDoc(userRef, updates as any)
+    return this.getProfile(userId)
+  }
+
+  async setUserRole(userId: string, role: 'student' | 'instructor' | 'admin'): Promise<User> {
+    return this.updateUser(userId, { role })
+  }
+
   async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
@@ -149,7 +165,32 @@ class FirestoreService {
     return this.getProgress(userId, courseId);
   }
 
-  // Quiz Methods
+  // Quiz Methods - Updated for new data structure
+  async createQuiz(quizData: {
+    title: string
+    description: string
+    timeLimit: number
+    courseId?: string
+  }): Promise<Quiz> {
+    // Filter out undefined values
+    const cleanQuizData = Object.fromEntries(
+      Object.entries(quizData).filter(([_, value]) => value !== undefined)
+    );
+    
+    const quizRef = await addDoc(collection(db, 'quizzes'), {
+      ...cleanQuizData,
+      totalQuestions: 0, // Will be updated when questions are added
+      createdAt: serverTimestamp()
+    });
+    
+    return {
+      id: quizRef.id,
+      ...cleanQuizData,
+      totalQuestions: 0,
+      createdAt: new Date().toISOString()
+    };
+  }
+
   async getQuiz(quizId: string): Promise<Quiz> {
     const quizDoc = await getDoc(doc(db, 'quizzes', quizId));
     if (!quizDoc.exists()) {
@@ -158,23 +199,96 @@ class FirestoreService {
     return { id: quizId, ...quizDoc.data() } as Quiz;
   }
 
-  async submitQuiz(userId: string, quizId: string, answers: Record<string, string>, timeSpent: number): Promise<QuizResult> {
+  async updateQuiz(quizId: string, updates: Partial<Quiz>): Promise<Quiz> {
+    const quizRef = doc(db, 'quizzes', quizId);
+    await updateDoc(quizRef, updates);
+    return this.getQuiz(quizId);
+  }
+
+  async deleteQuiz(quizId: string): Promise<void> {
+    const quizRef = doc(db, 'quizzes', quizId);
+    await updateDoc(quizRef, { deleted: true });
+  }
+
+  // Question Methods - Main collection with quizId reference
+  async createQuestion(quizId: string, questionData: {
+    text: string
+    options: string[]
+    correctAnswerIndex: number
+    explanation?: string
+    points: number
+    imageUrl?: string | null
+    difficulty?: 'easy' | 'medium' | 'hard'
+    tags?: string[]
+  }): Promise<Question> {
+    // Filter out undefined values and add quizId reference
+    const cleanQuestionData = Object.fromEntries(
+      Object.entries({
+        ...questionData,
+        quizId
+      }).filter(([_, value]) => value !== undefined)
+    );
+    
+    const questionRef = await addDoc(collection(db, 'questions'), cleanQuestionData);
+    
+    // Update quiz totalQuestions count
     const quiz = await this.getQuiz(quizId);
+    await this.updateQuiz(quizId, { totalQuestions: quiz.totalQuestions + 1 });
+    
+    return {
+      id: questionRef.id,
+      ...cleanQuestionData
+    };
+  }
+
+  async getQuestions(quizId: string): Promise<Question[]> {
+    const questionsSnapshot = await getDocs(
+      query(
+        collection(db, 'questions'), 
+        where('quizId', '==', quizId),
+        orderBy('createdAt', 'asc')
+      )
+    );
+    
+    return questionsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Question[];
+  }
+
+  async updateQuestion(quizId: string, questionId: string, updates: Partial<Question>): Promise<Question> {
+    const questionRef = doc(db, 'questions', questionId);
+    await updateDoc(questionRef, updates);
+    
+    const questionDoc = await getDoc(questionRef);
+    return { id: questionId, ...questionDoc.data() } as Question;
+  }
+
+  async deleteQuestion(quizId: string, questionId: string): Promise<void> {
+    const questionRef = doc(db, 'questions', questionId);
+    await updateDoc(questionRef, { deleted: true });
+    
+    // Update quiz totalQuestions count
+    const quiz = await this.getQuiz(quizId);
+    await this.updateQuiz(quizId, { totalQuestions: Math.max(0, quiz.totalQuestions - 1) });
+  }
+
+  async submitQuiz(userId: string, quizId: string, answers: Record<string, number>, timeSpent: number): Promise<QuizResult> {
+    const questions = await this.getQuestions(quizId);
     
     // Calculate score
     let correctAnswers = 0;
-    const totalQuestions = quiz.questions.length;
+    const totalQuestions = questions.length;
     
-    quiz.questions.forEach(question => {
+    questions.forEach(question => {
       const userAnswer = answers[question.id];
-      const correctOption = question.options.find(option => option.isCorrect);
-      if (userAnswer === correctOption?.id) {
+      if (userAnswer === question.correctAnswerIndex) {
         correctAnswers++;
       }
     });
     
     const score = correctAnswers;
-    const percentage = (score / totalQuestions) * 100;
+    const percentage = totalQuestions > 0 ? (score / totalQuestions) * 100 : 0;
     const passed = percentage >= 70; // 70% passing grade
     
     const result: QuizResult = {

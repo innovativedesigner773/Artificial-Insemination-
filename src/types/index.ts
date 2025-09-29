@@ -43,10 +43,40 @@ export interface Lesson {
   id: string
   title: string
   duration: number // minutes
-  type: 'video' | 'interactive' | 'quiz' | 'text' | 'document' | 'presentation'
+  type: 'video' | 'interactive' | 'quiz' | 'text' | 'document' | 'presentation' | 'mixed'
+  content?: string
+  // Deprecated: use videoSources instead
+  videoUrl?: string
+  // Per-language video sources (URL to YouTube/Vimeo or file URL)
+  videoSources?: Partial<Record<
+    | 'Afrikaans'
+    | 'English'
+    | 'IsiNdebele'
+    | 'IsiXhosa'
+    | 'IsiZulu'
+    | 'Sesotho'
+    | 'Sepedi'
+    | 'Setswana'
+    | 'SiSwati'
+    | 'Tshivenda'
+    | 'Xitsonga',
+    string
+  >>
+  attachments?: UploadedFile[]
+  quizId?: string // Reference to quiz document for quiz lessons
+  contentBlocks?: ContentBlock[] // For mixed content lessons
+}
+
+export interface ContentBlock {
+  id: string
+  type: 'video' | 'text' | 'quiz' | 'document' | 'interactive'
+  title: string
   content?: string
   videoUrl?: string
+  quizId?: string
   attachments?: UploadedFile[]
+  order: number // Order within the lesson
+  duration?: number // Duration for this specific block in minutes
 }
 
 // Progress Types
@@ -68,22 +98,28 @@ export interface Enrollment {
   completedLessons?: number
 }
 
-// Quiz Types
+// Quiz Types - Simplified Firestore Data Model
 export interface Quiz {
   id: string
   title: string
   description: string
-  timeLimit: number // minutes
-  questions: Question[]
+  timeLimit: number // in seconds
+  totalQuestions: number
+  createdAt: string
+  courseId?: string // optional reference to course
 }
 
 export interface Question {
   id: string
-  type: 'multiple_choice' | 'true_false' | 'drag_drop'
-  question: string
-  options: QuestionOption[]
-  points: number
+  text: string
+  options: string[] // Array of option strings
+  correctAnswerIndex: number // Index of correct option
   explanation?: string
+  points: number
+  imageUrl?: string | null // optional for image-based questions
+  difficulty?: 'easy' | 'medium' | 'hard'
+  tags?: string[]
+  quizId: string // Reference to the quiz this question belongs to
 }
 
 export interface QuestionOption {
@@ -129,7 +165,7 @@ export interface UploadedFile {
   name: string
   type: string
   size: number
-  data: string // base64 encoded file data
+  data?: string // base64 encoded file data (optional, not stored in course documents)
   url?: string // optional URL for downloaded files
 }
 

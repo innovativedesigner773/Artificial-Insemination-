@@ -5,6 +5,7 @@ import type {
   Course, 
   Progress, 
   Quiz, 
+  Question,
   QuizResult, 
   DashboardData,
   AuthResponse,
@@ -47,6 +48,19 @@ class ApiService {
     return firestoreService.getProfile(userId)
   }
 
+  // Admin User Methods
+  async listUsers(): Promise<User[]> {
+    return firestoreService.getAllUsers()
+  }
+
+  async setUserRole(userId: string, role: 'student' | 'instructor' | 'admin'): Promise<User> {
+    return firestoreService.setUserRole(userId, role)
+  }
+
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
+    return firestoreService.updateUser(userId, updates)
+  }
+
   async updateProfile(updates: Partial<User>): Promise<User> {
     const userId = await this.getCurrentUserId()
     return firestoreService.updateProfile(userId, updates)
@@ -77,11 +91,37 @@ class ApiService {
   }
 
   // Quiz Methods
+  async createQuiz(quizData: {
+    title: string
+    description: string
+    timeLimit: number
+    courseId?: string
+  }): Promise<Quiz> {
+    return firestoreService.createQuiz(quizData)
+  }
+
   async getQuiz(quizId: string): Promise<Quiz> {
     return firestoreService.getQuiz(quizId)
   }
 
-  async submitQuiz(quizId: string, answers: Record<string, string>, timeSpent: number): Promise<QuizResult> {
+  async getQuestions(quizId: string): Promise<Question[]> {
+    return firestoreService.getQuestions(quizId)
+  }
+
+  async createQuestion(quizId: string, questionData: {
+    text: string
+    options: string[]
+    correctAnswerIndex: number
+    explanation?: string
+    points: number
+    imageUrl?: string | null
+    difficulty?: 'easy' | 'medium' | 'hard'
+    tags?: string[]
+  }): Promise<Question> {
+    return firestoreService.createQuestion(quizId, questionData)
+  }
+
+  async submitQuiz(quizId: string, answers: Record<string, number>, timeSpent: number): Promise<QuizResult> {
     const userId = await this.getCurrentUserId()
     return firestoreService.submitQuiz(userId, quizId, answers, timeSpent)
   }

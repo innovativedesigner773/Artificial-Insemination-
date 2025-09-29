@@ -7,9 +7,11 @@ import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Badge } from '../ui/badge'
 import { Progress } from '../ui/progress'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { toast } from 'sonner'
 import { firestoreService, convertFileToBase64 } from '../../utils/firebase/database'
 import { useAuth } from '../../hooks/useAuth'
+import { QuizCreator } from '../quiz/QuizCreator'
 import { 
   ArrowLeft,
   Save,
@@ -76,11 +78,39 @@ interface ModuleFormData {
 interface LessonFormData {
   id: string
   title: string
-  type: 'video' | 'interactive' | 'quiz' | 'text' | 'document' | 'presentation'
+  type: 'video' | 'interactive' | 'quiz' | 'text' | 'document' | 'presentation' | 'mixed'
   duration: number
   content: string
   videoUrl?: string
+  videoSources?: Partial<Record<
+    | 'Afrikaans'
+    | 'English'
+    | 'IsiNdebele'
+    | 'IsiXhosa'
+    | 'IsiZulu'
+    | 'Sesotho'
+    | 'Sepedi'
+    | 'Setswana'
+    | 'SiSwati'
+    | 'Tshivenda'
+    | 'Xitsonga',
+    string
+  >>
   attachments: UploadedFile[]
+  quizId?: string // Reference to quiz document for quiz lessons
+  contentBlocks?: ContentBlockFormData[] // For mixed content lessons
+}
+
+interface ContentBlockFormData {
+  id: string
+  type: 'video' | 'text' | 'quiz' | 'document' | 'interactive'
+  title: string
+  content?: string
+  videoUrl?: string
+  quizId?: string
+  attachments: UploadedFile[]
+  order: number
+  duration?: number
 }
 
 interface UploadedFile {
@@ -120,6 +150,25 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [showQuizCreator, setShowQuizCreator] = useState(false)
+  const [currentQuizLesson, setCurrentQuizLesson] = useState<{ moduleId: string; lessonId: string } | null>(null)
+  const [showContentBlockCreator, setShowContentBlockCreator] = useState(false)
+  const [currentMixedLesson, setCurrentMixedLesson] = useState<{ moduleId: string; lessonId: string } | null>(null)
+  const [newContentBlock, setNewContentBlock] = useState({ title: '', type: 'video' as const, content: '', duration: 0 })
+  
+  const southAfricanLanguages = [
+    'Afrikaans',
+    'English',
+    'IsiNdebele',
+    'IsiXhosa',
+    'IsiZulu',
+    'Sesotho',
+    'Sepedi',
+    'Setswana',
+    'SiSwati',
+    'Tshivenda',
+    'Xitsonga'
+  ] as const
   
   const { user } = useAuth()
   
@@ -353,6 +402,22 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
         attachments: []
       }
 
+      // If it's a quiz lesson, open the quiz creator
+      if (newLesson.type === 'quiz') {
+        setCurrentQuizLesson({ moduleId: selectedModuleId, lessonId })
+        setShowQuizCreator(true)
+        // Don't add the lesson yet, wait for quiz creation
+        return
+      }
+
+      // If it's a mixed content lesson, open the content block creator
+      if (newLesson.type === 'mixed') {
+        setCurrentMixedLesson({ moduleId: selectedModuleId, lessonId })
+        setShowContentBlockCreator(true)
+        // Don't add the lesson yet, wait for content blocks to be added
+        return
+      }
+
       setFormData(prev => ({
         ...prev,
         modules: prev.modules.map(module => 
@@ -364,6 +429,84 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
 
       setNewLesson({ title: '', type: 'video', duration: 0, content: '' })
     }
+  }
+
+  const handleQuizCreated = (quiz: any) => {
+    if (currentQuizLesson) {
+      const lessonId = currentQuizLesson.lessonId
+      const moduleId = currentQuizLesson.moduleId
+      
+      const lesson: LessonFormData = {
+        id: lessonId,
+        title: newLesson.title,
+        type: newLesson.type,
+        duration: newLesson.duration,
+        content: newLesson.content,
+        attachments: [],
+        quizId: quiz.id // Link the quiz to the lesson
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        modules: prev.modules.map(module => 
+          module.id === moduleId 
+            ? { ...module, lessons: [...module.lessons, lesson] }
+            : module
+        )
+      }))
+
+      setNewLesson({ title: '', type: 'video', duration: 0, content: '' })
+      setCurrentQuizLesson(null)
+      setShowQuizCreator(false)
+      
+      toast.success('Quiz lesson added successfully!')
+    }
+  }
+
+  const handleQuizCreationCancel = () => {
+    setCurrentQuizLesson(null)
+    setShowQuizCreator(false)
+    // Reset the lesson form since quiz creation was cancelled
+    setNewLesson({ title: '', type: 'video', duration: 0, content: '' })
+  }
+
+  const handleContentBlockCreated = () => {
+    if (currentMixedLesson) {
+      const lessonId = currentMixedLesson.lessonId
+      const moduleId = currentMixedLesson.moduleId
+      
+      const lesson: LessonFormData = {
+        id: lessonId,
+        title: newLesson.title,
+        type: newLesson.type,
+        duration: newLesson.duration,
+        content: newLesson.content,
+        attachments: [],
+        contentBlocks: [] // Will be populated when content blocks are added
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        modules: prev.modules.map(module => 
+          module.id === moduleId 
+            ? { ...module, lessons: [...module.lessons, lesson] }
+            : module
+        )
+      }))
+
+      setNewLesson({ title: '', type: 'video', duration: 0, content: '' })
+      setCurrentMixedLesson(null)
+      setShowContentBlockCreator(false)
+      
+      toast.success('Mixed content lesson added successfully!')
+    }
+  }
+
+  const handleContentBlockCreationCancel = () => {
+    setCurrentMixedLesson(null)
+    setShowContentBlockCreator(false)
+    // Reset the lesson form since content block creation was cancelled
+    setNewLesson({ title: '', type: 'video', duration: 0, content: '' })
   }
 
   const handleRemoveModule = (moduleId: string) => {
@@ -419,22 +562,49 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
         return total + module.lessons.reduce((moduleTotal, lesson) => moduleTotal + lesson.duration, 0)
       }, 0) / 60 // Convert minutes to hours
 
+      // Create course data without large attachments to avoid payload size limits
       const courseData = {
         title: formData.title,
         description: formData.description,
         difficulty: formData.difficulty,
         duration: Math.round(totalDuration * 10) / 10, // Round to 1 decimal place
         thumbnail: formData.thumbnail || '/api/placeholder/400/200',
-        modules: formData.modules,
+        modules: formData.modules.map(module => ({
+          ...module,
+          attachments: module.attachments.map(file => ({
+            id: file.id,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            // Don't include the base64 data in the course document
+            // Store only metadata, actual file data should be stored separately
+          })),
+          lessons: module.lessons.map(lesson => ({
+            ...lesson,
+            attachments: lesson.attachments.map(file => ({
+              id: file.id,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              // Don't include the base64 data in the course document
+            }))
+          }))
+        })),
         published: formData.isPublished,
         category: formData.category,
-        attachments: formData.attachments || [],
+        attachments: formData.attachments.map(file => ({
+          id: file.id,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          // Don't include the base64 data in the course document
+        })),
         instructorId: user?.id || 'anonymous'
       }
       
       const createdCourse = await firestoreService.createCourse(courseData)
       
-      toast.success('Course created successfully!')
+      toast.success('Course created successfully! Note: File attachments are stored as metadata only.')
       
       if (onCourseCreated) {
         onCourseCreated(createdCourse.id)
@@ -645,6 +815,9 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
               <p className="text-xs text-gray-500 mt-2">
                 Supported: PDF, DOC, PPT, XLS, Images, Videos (Max 50MB each)
               </p>
+              <p className="text-xs text-amber-600 mt-1">
+                Note: Files are stored as metadata only to prevent payload size limits.
+              </p>
             </div>
 
             {uploadingFiles && (
@@ -795,6 +968,7 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
                                 <SelectItem value="text">Reading Material</SelectItem>
                                 <SelectItem value="document">Document Review</SelectItem>
                                 <SelectItem value="presentation">Presentation</SelectItem>
+                                <SelectItem value="mixed">Mixed Content (Video + Quiz, etc.)</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -818,7 +992,35 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
                             />
                           </div>
                         </div>
-                        <Button type="button" onClick={handleAddLesson} className="flex items-center gap-2">
+                        {/* Per-language video sources for Video lessons */}
+                        {newLesson.type === 'video' && (
+                          <div className="space-y-4 mt-2">
+                            <div className="rounded-md border p-3">
+                              <div className="mb-2 font-medium text-sm">Video sources per language</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {southAfricanLanguages.map((lang) => (
+                                  <div key={lang} className="space-y-1">
+                                    <Label>{lang}</Label>
+                                    <Input
+                                      placeholder={`Paste YouTube URL or file URL for ${lang}`}
+                                      value={(newLesson.videoSources && newLesson.videoSources[lang as keyof typeof newLesson.videoSources]) || ''}
+                                      onChange={(e) => setNewLesson(prev => ({
+                                        ...prev,
+                                        videoSources: {
+                                          ...(prev.videoSources || {}),
+                                          [lang]: e.target.value
+                                        }
+                                      }))}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-2">Provide any that you have; learners will be able to switch languages in the player.</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <Button type="button" onClick={handleAddLesson} className="flex items-center gap-2 mt-2">
                           <Plus className="h-4 w-4" />
                           Add Lesson
                         </Button>
@@ -900,6 +1102,16 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
                                 <Badge variant="outline" className="text-xs">
                                   {lesson.duration} min
                                 </Badge>
+                                {lesson.type === 'quiz' && lesson.quizId && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Quiz Linked
+                                  </Badge>
+                                )}
+                                {lesson.type === 'mixed' && lesson.contentBlocks && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {lesson.contentBlocks.length} Content Blocks
+                                  </Badge>
+                                )}
                               </div>
                               <Button
                                 type="button"
@@ -998,6 +1210,95 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
           </Button>
         </div>
       </form>
+
+      {/* Quiz Creator Dialog */}
+      <Dialog open={showQuizCreator} onOpenChange={setShowQuizCreator}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Quiz for Lesson</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Create an assessment quiz that will be linked to this lesson.
+            </p>
+          </DialogHeader>
+          <QuizCreator
+            courseId={undefined} // Will be set when course is created
+            onQuizCreated={handleQuizCreated}
+            onCancel={handleQuizCreationCancel}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Block Creator Dialog */}
+      <Dialog open={showContentBlockCreator} onOpenChange={setShowContentBlockCreator}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Mixed Content Lesson</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Create a lesson with multiple content types (e.g., video followed by quiz).
+            </p>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="font-medium">Lesson: {newLesson.title}</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="blockTitle">Content Block Title</Label>
+                    <Input
+                      id="blockTitle"
+                      value={newContentBlock.title}
+                      onChange={(e) => setNewContentBlock(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g., Introduction Video"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="blockType">Content Type</Label>
+                    <Select 
+                      value={newContentBlock.type} 
+                      onValueChange={(value: any) => setNewContentBlock(prev => ({ ...prev, type: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="video">Video</SelectItem>
+                        <SelectItem value="text">Text Content</SelectItem>
+                        <SelectItem value="quiz">Quiz</SelectItem>
+                        <SelectItem value="document">Document</SelectItem>
+                        <SelectItem value="interactive">Interactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="blockContent">Content/Description</Label>
+                  <Input
+                    id="blockContent"
+                    value={newContentBlock.content}
+                    onChange={(e) => setNewContentBlock(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Description of this content block"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleContentBlockCreationCancel}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={handleContentBlockCreated}
+                  >
+                    Create Mixed Lesson
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

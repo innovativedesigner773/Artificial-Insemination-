@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { firestoreService } from '../../utils/firebase/database'
+import { getDummyCourses } from '../../utils/dummyData'
+import { useAuth } from '../../hooks/useAuth'
+import type { Course, Module, Lesson } from '../../types'
 import { CourseCard } from './CourseCard'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -36,6 +39,7 @@ export function CourseList({ onGetStarted }: CourseListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const { user } = useAuth()
 
   useEffect(() => {
     loadCourses()
@@ -47,7 +51,8 @@ export function CourseList({ onGetStarted }: CourseListProps) {
 
   const loadCourses = async () => {
     try {
-      const coursesData = await firestoreService.getCourses()
+      // Use local dummy data to simulate Firestore courses for demo
+      const coursesData = getDummyCourses()
       setCourses(coursesData)
     } catch (error) {
       console.error('Failed to load courses:', error)

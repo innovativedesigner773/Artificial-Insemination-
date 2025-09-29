@@ -14,7 +14,8 @@ import {
   Trophy,
   RotateCcw
 } from 'lucide-react'
-import { api } from '../../services/api'
+import { firestoreService } from '../../utils/firebase/database'
+import { getDummyQuiz } from '../../utils/dummyData'
 import type { Quiz, Question, QuizResult } from '../../types'
 
 interface QuizInterfaceProps {
@@ -24,9 +25,10 @@ interface QuizInterfaceProps {
 
 export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
   const [quiz, setQuiz] = useState<Quiz | null>(null)
+  const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, number>>({}) // Changed to number (option index)
   const [timeLeft, setTimeLeft] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showResults, setShowResults] = useState(false)
@@ -55,10 +57,21 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
 
   const loadQuiz = async () => {
     try {
-      const quizData = await api.getQuiz(quizId)
-      setQuiz(quizData)
-      setTimeLeft(quizData.timeLimit * 60) // Convert minutes to seconds
-      setStartTime(new Date())
+      // Try dummy quiz first by id; fallback to firestore if needed
+      const dummy = getDummyQuiz(quizId)
+      if (dummy) {
+        setQuiz(dummy.quiz)
+        setQuestions(dummy.questions)
+        setTimeLeft(dummy.quiz.timeLimit)
+        setStartTime(new Date())
+      } else {
+        const quizData = await firestoreService.getQuiz(quizId)
+        const questionsData = await firestoreService.getQuestions(quizId)
+        setQuiz(quizData)
+        setQuestions(questionsData)
+        setTimeLeft(quizData.timeLimit)
+        setStartTime(new Date())
+      }
     } catch (error) {
       console.error('Failed to load quiz:', error)
       toast.error('Failed to load quiz')
@@ -72,15 +85,15 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
     await submitQuiz()
   }
 
-  const handleAnswerChange = (questionId: string, answer: string) => {
+  const handleAnswerChange = (questionId: string, answerIndex: number) => {
     setAnswers(prev => ({
       ...prev,
-      [questionId]: answer
+      [questionId]: answerIndex
     }))
   }
 
   const nextQuestion = () => {
-    if (quiz && currentQuestion < quiz.questions.length - 1) {
+    if (questions && currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1)
     }
   }
@@ -96,12 +109,20 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
 
     setIsSubmitting(true)
     try {
-      const timeSpent = Math.floor((new Date().getTime() - startTime.getTime()) / 1000 / 60) // minutes
-      const result = await api.submitQuiz(quizId, answers, timeSpent)
-      setQuizResult(result)
+      const timeSpent = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
+      // Compute result locally for dummy quizzes
+      const totalQuestions = questions.length
+      let score = 0
+      questions.forEach(q => {
+        if (answers[q.id] === q.correctAnswerIndex) score += 1
+      })
+      const percentage = totalQuestions ? (score / totalQuestions) * 100 : 0
+      const passed = percentage >= 70
+      const localResult = { quizId, score, totalQuestions, percentage, passed, timeSpent }
+      setQuizResult(localResult)
       setShowResults(true)
-      onComplete(result)
-      toast.success(result.passed ? 'Congratulations! You passed!' : 'Quiz completed')
+      onComplete(localResult)
+      toast.success(passed ? 'Congratulations! You passed!' : 'Quiz completed')
     } catch (error) {
       console.error('Failed to submit quiz:', error)
       toast.error('Failed to submit quiz')
@@ -117,8 +138,8 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
   }
 
   const getProgressPercent = () => {
-    if (!quiz) return 0
-    return ((currentQuestion + 1) / quiz.questions.length) * 100
+    if (!questions.length) return 0
+    return ((currentQuestion + 1) / questions.length) * 100
   }
 
   const getAnsweredCount = () => {
@@ -132,7 +153,7 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
     setQuizResult(null)
     setStartTime(new Date())
     if (quiz) {
-      setTimeLeft(quiz.timeLimit * 60)
+      setTimeLeft(quiz.timeLimit)
     }
   }
 
@@ -219,7 +240,7 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
     )
   }
 
-  const question = quiz.questions[currentQuestion]
+  const question = questions[currentQuestion]
 
   return (
     <div className="space-y-6">
@@ -234,14 +255,14 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
                 {formatTime(timeLeft)}
               </Badge>
               <Badge variant="outline">
-                Question {currentQuestion + 1} of {quiz.questions.length}
+                Question {currentQuestion + 1} of {questions.length}
               </Badge>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
               <span>Progress</span>
-              <span>{getAnsweredCount()} / {quiz.questions.length} answered</span>
+              <span>{getAnsweredCount()} / {questions.length} answered</span>
             </div>
             <Progress value={getProgressPercent()} className="h-2" />
           </div>
@@ -254,43 +275,25 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
           <div className="space-y-6">
             <div>
               <div className="text-sm text-gray-500 mb-2">
-                Question {currentQuestion + 1} of {quiz.questions.length}
+                Question {currentQuestion + 1} of {questions.length}
               </div>
-              <h3 className="text-lg font-medium mb-4">{question.question}</h3>
+              <h3 className="text-lg font-medium mb-4">{question.text}</h3>
             </div>
 
             <div className="space-y-3">
-              {question.type === 'multiple_choice' && (
-                <RadioGroup
-                  value={answers[question.id] || ''}
-                  onValueChange={(value) => handleAnswerChange(question.id, value)}
-                >
-                  {question.options.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                      <RadioGroupItem value={option.id} id={option.id} />
-                      <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                        {option.text}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
-
-              {question.type === 'true_false' && (
-                <RadioGroup
-                  value={answers[question.id] || ''}
-                  onValueChange={(value) => handleAnswerChange(question.id, value)}
-                >
-                  {question.options.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                      <RadioGroupItem value={option.id} id={option.id} />
-                      <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                        {option.text}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
+              <RadioGroup
+                value={answers[question.id]?.toString() || ''}
+                onValueChange={(value) => handleAnswerChange(question.id, parseInt(value))}
+              >
+                {question.options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                    <RadioGroupItem value={index.toString()} id={`${question.id}_${index}`} />
+                    <Label htmlFor={`${question.id}_${index}`} className="flex-1 cursor-pointer">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
 
             <div className="flex justify-between pt-6">
@@ -303,7 +306,7 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
               </Button>
 
               <div className="flex gap-2">
-                {currentQuestion === quiz.questions.length - 1 ? (
+                {currentQuestion === questions.length - 1 ? (
                   <Button
                     onClick={submitQuiz}
                     disabled={isSubmitting || getAnsweredCount() === 0}
@@ -314,7 +317,7 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
                 ) : (
                   <Button
                     onClick={nextQuestion}
-                    disabled={!answers[question.id]}
+                    disabled={answers[question.id] === undefined}
                   >
                     Next
                   </Button>
@@ -329,19 +332,19 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-2">
-            {quiz.questions.map((_, index) => (
+            {questions.map((question, index) => (
               <Button
                 key={index}
                 variant={index === currentQuestion ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setCurrentQuestion(index)}
                 className={`w-10 h-10 ${
-                  answers[quiz.questions[index].id] 
+                  answers[question.id] !== undefined
                     ? 'bg-green-100 border-green-300' 
                     : ''
                 }`}
               >
-                {answers[quiz.questions[index].id] && (
+                {answers[question.id] !== undefined && (
                   <CheckCircle className="h-3 w-3 text-green-600 absolute -top-1 -right-1" />
                 )}
                 {index + 1}

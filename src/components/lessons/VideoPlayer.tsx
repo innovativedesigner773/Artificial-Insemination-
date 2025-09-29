@@ -32,9 +32,36 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showControls, setShowControls] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
+  const languages = [
+    'Afrikaans',
+    'English',
+    'IsiNdebele',
+    'IsiXhosa',
+    'IsiZulu',
+    'Sesotho',
+    'Sepedi',
+    'Setswana',
+    'SiSwati',
+    'Tshivenda',
+    'Xitsonga'
+  ] as const
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+    const available = languages.find(l => lesson.videoSources && lesson.videoSources[l as keyof typeof lesson.videoSources])
+    return available || 'English'
+  })
+  
+  const resolveVideoUrl = (): { type: 'file' | 'youtube'; url: string } | null => {
+    const perLang = lesson.videoSources && lesson.videoSources[selectedLanguage as keyof typeof lesson.videoSources]
+    const url = perLang || lesson.videoUrl || ''
+    if (!url) return null
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+    if (ytMatch) {
+      return { type: 'youtube', url: `https://www.youtube.com/embed/${ytMatch[1]}` }
+    }
+    return { type: 'file', url }
+  }
 
-  // Sample video URL - in real app this would come from lesson.videoUrl
-  const videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+  const source = resolveVideoUrl()
 
   useEffect(() => {
     const video = videoRef.current
@@ -166,13 +193,24 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
       >
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="w-full aspect-video"
-          poster="https://images.unsplash.com/photo-1581092583537-40568be4efa5?w=800&h=450&fit=crop"
-          onClick={togglePlay}
-        />
+        {source && source.type === 'youtube' ? (
+          <iframe
+            className="w-full aspect-video"
+            src={`${source.url}?rel=0&modestbranding=1`}
+            title={lesson.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            src={source ? source.url : ''}
+            className="w-full aspect-video"
+            poster="https://images.unsplash.com/photo-1581092583537-40568be4efa5?w=800&h=450&fit=crop"
+            onClick={togglePlay}
+            controls={false}
+          />
+        )}
 
         {/* Play/Pause Overlay */}
         {!isPlaying && (
@@ -255,6 +293,19 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Language selector */}
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="bg-white/20 text-white border-none rounded px-2 py-1 text-sm"
+              >
+                {languages
+                  .filter(l => (lesson.videoSources && lesson.videoSources[l as keyof typeof lesson.videoSources]) || lesson.videoUrl)
+                  .map(lang => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+              </select>
+
               <select
                 value={playbackRate}
                 onChange={(e) => changePlaybackRate(parseFloat(e.target.value))}

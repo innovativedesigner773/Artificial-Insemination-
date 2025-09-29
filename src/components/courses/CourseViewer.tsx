@@ -16,6 +16,7 @@ import {
   Trophy
 } from 'lucide-react'
 import { api } from '../../services/api'
+import { getDummyCourseById } from '../../utils/dummyData'
 import type { Course, Lesson, Progress as ProgressType, QuizResult } from '../../types'
 
 interface CourseViewerProps {
@@ -31,37 +32,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
   const [lessonProgress, setLessonProgress] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  // Sample course data - in real app this would come from API
-  const sampleCourse: Course = {
-    id: courseId,
-    title: 'Introduction to AI Techniques',
-    description: 'Basic principles and procedures of artificial insemination',
-    difficulty: 'beginner',
-    duration: 8,
-    thumbnail: '',
-    published: true,
-    category: 'Basic Techniques',
-    modules: [
-      {
-        id: 'module-1',
-        title: 'Basic Reproductive Anatomy',
-        lessons: [
-          { id: 'lesson-1', title: 'Female Reproductive System', duration: 30, type: 'video' },
-          { id: 'lesson-2', title: 'Male Reproductive System', duration: 25, type: 'video' },
-          { id: 'lesson-3', title: 'Knowledge Check', duration: 10, type: 'quiz' }
-        ]
-      },
-      {
-        id: 'module-2',
-        title: 'AI Fundamentals',
-        lessons: [
-          { id: 'lesson-4', title: 'History of AI', duration: 20, type: 'video' },
-          { id: 'lesson-5', title: 'Basic Procedures', duration: 35, type: 'video' },
-          { id: 'lesson-6', title: 'Final Assessment', duration: 15, type: 'quiz' }
-        ]
-      }
-    ]
-  }
+  // Load from dummy data to simulate backend
 
   useEffect(() => {
     loadCourse()
@@ -70,8 +41,8 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
 
   const loadCourse = async () => {
     try {
-      // In real app, fetch course by ID
-      setCourse(sampleCourse)
+      const data = getDummyCourseById(courseId)
+      setCourse(data)
     } catch (error) {
       console.error('Failed to load course:', error)
     } finally {
