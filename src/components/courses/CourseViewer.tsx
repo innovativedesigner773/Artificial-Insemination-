@@ -4,18 +4,18 @@ import { QuizInterface } from '../quiz/QuizInterface'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Progress } from '../ui/progress'
-import { Badge } from '../ui/badge'
 import { Separator } from '../ui/separator'
 import { 
   ChevronLeft, 
   ChevronRight, 
   Play, 
   CheckCircle,
-  Clock,
+  
   BookOpen,
   Trophy
 } from 'lucide-react'
 import { api } from '../../services/api'
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../ui/carousel'
 import { getDummyCourseById } from '../../utils/dummyData'
 import type { Course, Lesson, Progress as ProgressType, QuizResult } from '../../types'
 
@@ -29,7 +29,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0)
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0)
   const [progress, setProgress] = useState<ProgressType | null>(null)
-  const [lessonProgress, setLessonProgress] = useState(0)
+  const [, setLessonProgress] = useState(0)
   const [loading, setLoading] = useState(true)
 
   // Load from dummy data to simulate backend
@@ -213,12 +213,46 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
               <div className="space-y-6">
                 {/* Lesson Content */}
                 {currentLesson.type === 'video' && (
-                  <VideoPlayer
-                    lesson={currentLesson}
-                    courseId={courseId}
-                    onProgress={handleLessonProgress}
-                    onComplete={handleLessonComplete}
-                  />
+                  <div className="relative">
+                    <Carousel className="w-full">
+                      <CarouselContent className="items-stretch">
+                        {(currentLesson.content || '')
+                          .split(/\n\s*\n/)
+                          .filter(Boolean)
+                          .map((chunk, idx) => (
+                            <CarouselItem key={`text-${idx}`} className="max-w-3xl mx-auto">
+                              <Card className="border rounded-lg shadow-sm bg-white">
+                                <CardHeader>
+                                  <CardTitle className="text-blue-700">Lesson Slide {idx + 1}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="prose max-w-none whitespace-pre-line">
+                                    {chunk}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </CarouselItem>
+                          ))}
+                        <CarouselItem key="video" className="max-w-5xl mx-auto">
+                          <Card className="border rounded-lg shadow-sm bg-white overflow-hidden">
+                            <CardHeader>
+                              <CardTitle className="text-blue-700">Lesson Video</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              <VideoPlayer
+                                lesson={currentLesson}
+                                courseId={courseId}
+                                onProgress={handleLessonProgress}
+                                onComplete={handleLessonComplete}
+                              />
+                            </CardContent>
+                          </Card>
+                        </CarouselItem>
+                      </CarouselContent>
+                      <CarouselPrevious className="left-2 md:left-4 bg-white/90 border shadow-sm" />
+                      <CarouselNext className="right-2 md:right-4 bg-white/90 border shadow-sm" />
+                    </Carousel>
+                  </div>
                 )}
 
                 {currentLesson.type === 'quiz' && (

@@ -1,4 +1,4 @@
-import type { Course, Module, Lesson, Quiz, Question } from '../types'
+import type { Course, Quiz, Question } from '../types'
 
 export const dummyCourses: Course[] = [
   {
@@ -26,16 +26,16 @@ export const dummyCourses: Course[] = [
             title: 'Female Reproductive System',
             duration: 15,
             type: 'video',
-            content: 'Intro to female anatomy',
-            videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            content: 'Introduction and Definition: Artificial Insemination (AI) is a reproductive technology where sperm is collected, processed, and manually introduced into the female reproductive tract to achieve fertilization without natural mating. It is widely used in agriculture and human medicine and has transformed breeding practices across species. Why Study AI? Agricultural impact (rapid spread of superior genetics), medical applications (overcoming fertility challenges), scientific understanding (reproductive biology and genetics), and economic importance (significant value in agriculture and medicine).\n\nReproductive Biology Fundamentals (Female): Overview of the ovaries, oviducts (fallopian tubes), uterus, cervix, and vagina in relation to AI success. Emphasis on estrus detection, ovulation timing, and creating optimal conditions for fertilization.',
+            videoUrl: 'https://www.youtube.com/results?search_query=artificial+insemination+introduction+overview'
           },
           {
             id: 'les2',
             title: 'Male Reproductive System',
             duration: 12,
             type: 'video',
-            content: 'Intro to male anatomy',
-            videoUrl: 'https://youtu.be/aqz-KE-bpKQ'
+            content: 'Historical Background and Male Reproductive Fundamentals: Early development of AI: 1780s Spallanzani (dogs), 1899 (horses, Russia), 1930s–40s (cattle standardization), 1950s (frozen semen revolution), 1978 (human birth via AI + IVF). Modern era: sophisticated semen processing, computerized breeding programs, genetic selection, and adoption across species.\n\nMale anatomy relevance to AI: testes (sperm production), epididymis (maturation), ducts and accessory glands (seminal plasma). Links to semen quality, motility, morphology, and viability for successful insemination.',
+            videoUrl: 'https://www.youtube.com/results?search_query=male+reproductive+system+anatomy+artificial+insemination+context'
           },
           { id: 'quiz_mod1', title: 'Quick Check: Anatomy', duration: 8, type: 'quiz' }
         ]
@@ -51,18 +51,82 @@ export const dummyCourses: Course[] = [
             title: 'Preparation and Hygiene',
             duration: 18,
             type: 'video',
-            content: 'Preparation procedures',
-            videoUrl: 'https://www.youtube.com/watch?v=ysz5S6PUM-U'
+            content: 'Scientific Principles and Preparation: Fertilization steps—sperm transport, capacitation, binding and penetration of the egg, and zygote formation. Timing considerations: estrus detection, ovulation timing, and sperm viability. Genetic principles: heritability, breeding value, genetic diversity, and avoiding inbreeding.\n\nPreparation and hygiene focus: minimizing contamination, correct equipment handling, maintaining biosecurity, and SOPs that improve success rates.',
+            videoUrl: 'https://www.youtube.com/results?search_query=semen+handling+thawing+AI+straws+tutorial'
           },
           {
             id: 'les4',
             title: 'Insemination Technique',
             duration: 20,
             type: 'video',
-            content: 'Technique overview',
-            videoUrl: 'https://youtu.be/5qap5aO4i9A'
+            content: 'The AI Process Step-by-Step:\nPhase 1 – Semen Collection: artificial vagina, electroejaculation, manual methods (species-dependent); quality assessment of volume, concentration, motility, morphology.\nPhase 2 – Semen Processing: evaluation, dilution with extenders, cooling, addition of cryoprotectants, packaging in straws, freezing in liquid nitrogen (−196°C).\nPhase 3 – Female Preparation: estrus synchronization, health screening, nutrition.\nPhase 4 – Insemination Procedure: thawing, loading devices, insertion, deposition at the optimal site (cervix/uterus/oviducts by technique), and documentation.\nPhase 5 – Follow-up: pregnancy detection, record keeping, and ongoing health monitoring.',
+            videoUrl: 'https://www.youtube.com/results?search_query=cattle+artificial+insemination+procedure+step+by+step'
           },
           { id: 'quiz_mod2', title: 'Quick Check: Procedures', duration: 10, type: 'quiz' }
+        ]
+      },
+      {
+        id: 'mod3',
+        title: 'AI Fundamentals',
+        description: 'Types and scientific underpinnings of artificial insemination.',
+        attachments: [],
+        lessons: [
+          {
+            id: 'les5',
+            title: 'Types of Artificial Insemination',
+            duration: 16,
+            type: 'video',
+            content: 'Types by semen source: homologous (partner/designated male) vs heterologous (donor). Types by deposition site: intracervical insemination (ICI), intrauterine insemination (IUI), intratubal insemination. Practical considerations for complexity, preparation needs, and expected success rates for each method.',
+            videoUrl: 'https://www.youtube.com/results?search_query=types+of+artificial+insemination+IUI+ICI+intracervical+intratubal'
+          },
+          {
+            id: 'les6',
+            title: 'Timing and Success Factors',
+            duration: 14,
+            type: 'video',
+            content: 'Critical success factors: accurate estrus detection, precise ovulation timing, semen quality (motility, morphology, viability), practitioner skill, equipment readiness, and environmental management. Connections to genetic principles and breeding goals.',
+            videoUrl: 'https://www.youtube.com/results?search_query=ovulation+timing+and+success+factors+artificial+insemination'
+          }
+        ]
+      },
+      {
+        id: 'mod4',
+        title: 'Applications, Ethics, and Future',
+        description: 'Real-world applications, benefits, challenges, and future developments.',
+        attachments: [],
+        lessons: [
+          {
+            id: 'les7',
+            title: 'Applications in Agriculture',
+            duration: 17,
+            type: 'video',
+            content: 'Cattle: one bull sires thousands, rapid genetic improvement, disease control, cost efficiency; global usage and typical success rates. Other livestock: sheep/goats (seasonality, genetic gains, disease control), swine (year-round breeding, larger litters, biosecurity), horses (bloodline preservation, transport savings, performance breeding), poultry (turkey industry focus, uniformity, feed efficiency).',
+            videoUrl: 'https://www.youtube.com/results?search_query=artificial+insemination+in+cattle+goats+swine+horses+applications'
+          },
+          {
+            id: 'les8',
+            title: 'Applications in Human Medicine',
+            duration: 13,
+            type: 'video',
+            content: 'Fertility indications: male factor infertility, cervical factor, unexplained infertility, and family-building for single women and same-sex couples. Success rates per IUI cycle vary by age and etiology; donor programs, sperm banking, genetic screening, and safety protocols including quarantine and disease testing.',
+            videoUrl: 'https://www.youtube.com/results?search_query=intrauterine+insemination+IUI+procedure+explained'
+          },
+          {
+            id: 'les9',
+            title: 'Advantages and Limitations',
+            duration: 15,
+            type: 'video',
+            content: 'Advantages: genetic improvement, disease control, economic efficiency, geographic flexibility, record keeping, safety; medical advantages include fertility solutions, genetic screening, timing control, reduced infection risk, preserved fertility. Limitations: semen quality variability, processing/storage damage, equipment and facility demands, precise timing needs, costs, and species/age-related fertility differences.',
+            videoUrl: 'https://www.youtube.com/results?search_query=advantages+and+limitations+artificial+insemination+livestock+and+human'
+          },
+          {
+            id: 'les10',
+            title: 'Ethics, Future, and Study Aids',
+            duration: 18,
+            type: 'video',
+            content: 'Ethics: animal welfare (stress, handling), genetic diversity (inbreeding risk, loss of variability, conservation), and human ethics (consent, anonymity, rights of children, social and cultural perspectives, access and equity). Future: improved processing, enhanced freezing, automation, genetic marker selection, sexed semen, genomic selection, cloning integration, stem cell applications. Key terminology: capacitation, cryopreservation, estrus, extender, motility, morphology, ovulation, synchronization, viability. Study questions and conclusion summarizing AI as a cornerstone technology across agriculture, medicine, and conservation.',
+            videoUrl: 'https://www.youtube.com/results?search_query=ethical+considerations+and+future+of+artificial+insemination'
+          }
         ]
       }
     ]
@@ -93,7 +157,7 @@ export const dummyCourses: Course[] = [
             duration: 14,
             type: 'video',
             content: 'Estrus detection tips',
-            videoUrl: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g'
+            videoUrl: 'https://www.youtube.com/results?search_query=estrus+heat+detection+cattle+tutorial'
           },
           { id: 'quiz_modA', title: 'Quick Check: Troubleshooting', duration: 8, type: 'quiz' }
         ]
@@ -119,7 +183,8 @@ export const dummyQuizzes: Record<string, Quiz & { questions: Question[] }> = {
         explanation: 'Fertilization typically occurs in the oviduct.',
         points: 10,
         difficulty: 'easy',
-        tags: ['anatomy']
+        tags: ['anatomy'],
+        quizId: 'quiz_mod1'
       },
       {
         id: 'q2',
@@ -129,7 +194,8 @@ export const dummyQuizzes: Record<string, Quiz & { questions: Question[] }> = {
         explanation: 'Sperm is produced in the testes.',
         points: 10,
         difficulty: 'easy',
-        tags: ['anatomy']
+        tags: ['anatomy'],
+        quizId: 'quiz_mod1'
       },
       {
         id: 'q3',
@@ -139,7 +205,8 @@ export const dummyQuizzes: Record<string, Quiz & { questions: Question[] }> = {
         explanation: 'Fertilization usually occurs in the oviduct.',
         points: 10,
         difficulty: 'easy',
-        tags: ['anatomy']
+        tags: ['anatomy'],
+        quizId: 'quiz_mod1'
       }
     ]
   },
@@ -159,7 +226,8 @@ export const dummyQuizzes: Record<string, Quiz & { questions: Question[] }> = {
         explanation: 'Sterilization and hygiene are critical.',
         points: 10,
         difficulty: 'easy',
-        tags: ['procedure']
+        tags: ['procedure'],
+        quizId: 'quiz_mod2'
       },
       {
         id: 'q5',
@@ -169,7 +237,8 @@ export const dummyQuizzes: Record<string, Quiz & { questions: Question[] }> = {
         explanation: 'Estrus detection drives correct timing.',
         points: 10,
         difficulty: 'easy',
-        tags: ['procedure']
+        tags: ['procedure'],
+        quizId: 'quiz_mod2'
       }
     ]
   }
