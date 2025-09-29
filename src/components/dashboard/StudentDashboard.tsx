@@ -32,6 +32,7 @@ import {
   Eye
 } from 'lucide-react'
 import type { DashboardData } from '../../types'
+import { ImageWithFallback } from '../figma/ImageWithFallback'
 
 export function StudentDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
@@ -122,8 +123,14 @@ export function StudentDashboard() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Rocket className="h-16 w-16 text-white animate-bounce" />
+            <div className="w-64 h-40 bg-white/10 rounded-xl overflow-hidden border border-white/20 shadow-md">
+              <ImageWithFallback
+                src="https://farmersreview.co.bw/wp-content/uploads/2021/06/insemination-vache-afrique.jpg"
+                alt="Artificial insemination in livestock"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
             </div>
           </div>
         </div>

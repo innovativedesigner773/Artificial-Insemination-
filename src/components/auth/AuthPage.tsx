@@ -49,9 +49,11 @@ export function AuthPage() {
           <div className="hidden lg:block relative">
             <div className="relative">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1581092585537-40568be4efa5?w=600&h=400&fit=crop"
-                alt="Educational content illustration"
+                src="https://farmersreview.co.bw/wp-content/uploads/2021/06/insemination-vache-afrique.jpg"
+                alt="Artificial insemination in livestock"
                 className="rounded-2xl shadow-large w-full max-w-lg"
+                loading="lazy"
+                referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
             </div>
