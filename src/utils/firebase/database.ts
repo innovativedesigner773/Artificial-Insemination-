@@ -136,7 +136,6 @@ class FirestoreService {
     }
     const data = progressDoc.data();
     return { 
-      id: progressDoc.id, 
       ...data 
     } as Progress;
   }
@@ -189,9 +188,12 @@ class FirestoreService {
     
     return {
       id: quizRef.id,
-      ...cleanQuizData,
+      title: quizData.title,
+      description: quizData.description,
+      timeLimit: quizData.timeLimit,
       totalQuestions: 0,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(quizData.courseId && { courseId: quizData.courseId })
     } as Quiz;
   }
 
@@ -241,7 +243,15 @@ class FirestoreService {
     
     return {
       id: questionRef.id,
-      ...cleanQuestionData
+      text: questionData.text,
+      options: questionData.options,
+      correctAnswerIndex: questionData.correctAnswerIndex,
+      points: questionData.points,
+      quizId: quizId,
+      ...(questionData.explanation && { explanation: questionData.explanation }),
+      ...(questionData.imageUrl !== undefined && { imageUrl: questionData.imageUrl }),
+      ...(questionData.difficulty && { difficulty: questionData.difficulty }),
+      ...(questionData.tags && { tags: questionData.tags })
     } as Question;
   }
 
@@ -328,10 +338,9 @@ class FirestoreService {
       query(collection(db, 'enrollments'), where('userId', '==', userId))
     );
     
-    const enrollments = enrollmentsSnapshot.docs.map(doc => {
+    const enrollments: Enrollment[] = enrollmentsSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
-        id: doc.id,
         courseId: data.courseId,
         enrolledAt: data.enrolledAt,
         progress: data.progress,
@@ -369,7 +378,6 @@ class FirestoreService {
     return enrollmentsSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
-        id: doc.id,
         courseId: data.courseId,
         enrolledAt: data.enrolledAt,
         progress: data.progress,
