@@ -17,6 +17,7 @@ import type {
   Course, 
   Progress, 
   Quiz, 
+  Question,
   QuizResult, 
   DashboardData,
   Enrollment,
@@ -256,7 +257,7 @@ class FirestoreService {
     })) as Question[];
   }
 
-  async updateQuestion(quizId: string, questionId: string, updates: Partial<Question>): Promise<Question> {
+  async updateQuestion(questionId: string, updates: Partial<Question>): Promise<Question> {
     const questionRef = doc(db, 'questions', questionId);
     await updateDoc(questionRef, updates);
     
@@ -264,8 +265,17 @@ class FirestoreService {
     return { id: questionId, ...questionDoc.data() } as Question;
   }
 
-  async deleteQuestion(quizId: string, questionId: string): Promise<void> {
+  async deleteQuestion(questionId: string): Promise<void> {
     const questionRef = doc(db, 'questions', questionId);
+    const questionDoc = await getDoc(questionRef);
+    
+    if (!questionDoc.exists()) {
+      throw new Error('Question not found');
+    }
+    
+    const questionData = questionDoc.data();
+    const quizId = questionData.quizId;
+    
     await updateDoc(questionRef, { deleted: true });
     
     // Update quiz totalQuestions count
