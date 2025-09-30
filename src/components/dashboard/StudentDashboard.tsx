@@ -18,18 +18,11 @@ import {
   Brain,
   Target,
   Zap,
-  Star,
   Award,
   Sparkles,
   BarChart3,
   Activity,
-  Flame,
-  Rocket,
-  Shield,
-  Lightbulb,
-  ArrowRight,
-  Plus,
-  Eye
+  Flame
 } from 'lucide-react'
 import type { DashboardData } from '../../types'
 import { ImageWithFallback } from '../figma/ImageWithFallback'

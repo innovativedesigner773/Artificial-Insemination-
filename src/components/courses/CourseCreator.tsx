@@ -18,20 +18,14 @@ import {
   Plus,
   X,
   Upload,
-  Image,
   Video,
   FileText,
   BookOpen,
   Clock,
   Target,
-  Users,
-  Star,
   Tag,
   Eye,
   EyeOff,
-  CheckCircle,
-  AlertCircle,
-  Sparkles,
   Brain,
   Zap,
   File,
@@ -40,17 +34,7 @@ import {
   FileText as FilePdf,
   Download,
   Trash2,
-  Microscope,
-  Heart,
-  Shield,
-  Activity,
-  TrendingUp,
-  Award,
-  Calendar,
-  MapPin,
-  UserCheck,
-  Database,
-  BarChart3
+  Microscope
 } from 'lucide-react'
 
 interface CourseFormData {
@@ -145,7 +129,7 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
 
   const [newTag, setNewTag] = useState('')
   const [newModule, setNewModule] = useState({ title: '', description: '' })
-  const [newLesson, setNewLesson] = useState({ title: '', type: 'video' as const, duration: 0, content: '' })
+  const [newLesson, setNewLesson] = useState<{ title: string; type: 'video' | 'quiz' | 'mixed'; duration: number; content: string; videoSources?: any }>({ title: '', type: 'video', duration: 0, content: '' })
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingFiles, setUploadingFiles] = useState(false)
@@ -619,7 +603,7 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
     }
   }
 
-  const selectedModule = formData.modules.find(m => m.id === selectedModuleId)
+  // const selectedModule = formData.modules.find(m => m.id === selectedModuleId)
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

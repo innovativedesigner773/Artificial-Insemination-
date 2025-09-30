@@ -6,14 +6,7 @@ import {
   Brain, 
   Sparkles, 
   Target, 
-  Award, 
-  Zap, 
-  Shield, 
-  Lightbulb, 
   Rocket,
-  Star,
-  CheckCircle,
-  Users,
   BookOpen,
   Trophy
 } from 'lucide-react'

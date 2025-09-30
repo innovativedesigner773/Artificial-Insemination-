@@ -16,13 +16,11 @@ import {
   Clock,
   Brain,
   Trash2,
-  Edit3,
   CheckCircle,
-  AlertCircle,
   BookOpen,
   Hash
 } from 'lucide-react'
-import type { Quiz, Question } from '../../types'
+import type { Quiz } from '../../types'
 
 interface QuizCreatorProps {
   courseId?: string

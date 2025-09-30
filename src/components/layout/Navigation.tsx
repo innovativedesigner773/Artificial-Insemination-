@@ -31,7 +31,6 @@ import {
   Shield,
   BarChart3,
   Users,
-  Database,
   FileText
 } from 'lucide-react'
 

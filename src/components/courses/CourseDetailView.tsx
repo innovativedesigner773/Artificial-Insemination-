@@ -335,7 +335,8 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
                               size="sm"
                               variant="outline"
                               className="h-8 px-3 text-xs"
-                              onClick={() => downloadBase64File(file.data, file.name, file.type)}
+                              onClick={() => file.data && downloadBase64File(file.data, file.name, file.type)}
+                            
                             >
                               <Download className="h-3 w-3 mr-1" />
                               Download
@@ -470,7 +471,7 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
                           size="sm"
                           variant="outline"
                           className="h-8 px-3 text-xs"
-                          onClick={() => downloadBase64File(file.data, file.name, file.type)}
+                          onClick={() => file.data && downloadBase64File(file.data, file.name, file.type)}
                         >
                           <Download className="h-3 w-3 mr-1" />
                           Download

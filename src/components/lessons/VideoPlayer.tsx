@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '../ui/button'
-import { Progress } from '../ui/progress'
 import { Card } from '../ui/card'
 import { 
   Play, 
@@ -9,8 +8,7 @@ import {
   VolumeX, 
   Maximize, 
   SkipBack, 
-  SkipForward,
-  Settings
+  SkipForward
 } from 'lucide-react'
 import { api } from '../../services/api'
 import type { Lesson } from '../../types'

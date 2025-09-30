@@ -512,7 +512,7 @@ export function BatchUserCreator({ onClose, onSuccess }: BatchUserCreatorProps) 
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {users.map((user, index) => (
+                  {users.map((user) => (
                     <tr 
                       key={user.id} 
                       className={`

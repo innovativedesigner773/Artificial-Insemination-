@@ -118,7 +118,16 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
       })
       const percentage = totalQuestions ? (score / totalQuestions) * 100 : 0
       const passed = percentage >= 70
-      const localResult = { quizId, score, totalQuestions, percentage, passed, timeSpent }
+      const localResult = { 
+        quizId, 
+        userId: '', // Will be set on server
+        score, 
+        totalQuestions, 
+        percentage, 
+        passed, 
+        timeSpent,
+        submittedAt: new Date().toISOString()
+      }
       setQuizResult(localResult)
       setShowResults(true)
       onComplete(localResult)
@@ -283,7 +292,7 @@ export function QuizInterface({ quizId, onComplete }: QuizInterfaceProps) {
             <div className="space-y-3">
               <RadioGroup
                 value={answers[question.id]?.toString() || ''}
-                onValueChange={(value) => handleAnswerChange(question.id, parseInt(value))}
+                onValueChange={(value: string) => handleAnswerChange(question.id, parseInt(value))}
               >
                 {question.options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">

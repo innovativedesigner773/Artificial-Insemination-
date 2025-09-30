@@ -11,19 +11,13 @@ import {
   Star, 
   Users, 
   Play,
-  CheckCircle,
   Loader2,
   Sparkles,
   Brain,
   Target,
-  Zap,
   Award,
-  TrendingUp,
   Eye,
   ArrowRight,
-  Shield,
-  Lightbulb,
-  Flame,
   FileText,
   Download
 } from 'lucide-react'
@@ -178,7 +172,7 @@ export function CourseCard({ course, onGetStarted, isEnrolled = false, progress 
                     size="sm"
                     variant="outline"
                     className="h-7 px-2 text-xs"
-                    onClick={() => downloadBase64File(file.data, file.name, file.type)}
+                    onClick={() => file.data && downloadBase64File(file.data, file.name, file.type)}
                   >
                     <Download className="h-3 w-3 mr-1" />
                     Download

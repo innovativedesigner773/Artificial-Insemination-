@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
-import { firestoreService } from '../../utils/firebase/database'
 import { getDummyCourses } from '../../utils/dummyData'
-import { useAuth } from '../../hooks/useAuth'
-import type { Course, Module, Lesson } from '../../types'
+import type { Course } from '../../types'
 import { CourseCard } from './CourseCard'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -19,14 +17,8 @@ import {
   Zap, 
   Star, 
   Award,
-  TrendingUp,
-  Users,
-  Clock,
-  ChevronDown,
-  X,
   SlidersHorizontal
 } from 'lucide-react'
-import type { Course } from '../../types'
 
 interface CourseListProps {
   onGetStarted?: (courseId: string) => void
@@ -39,7 +31,6 @@ export function CourseList({ onGetStarted }: CourseListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const { user } = useAuth()
 
   useEffect(() => {
     loadCourses()

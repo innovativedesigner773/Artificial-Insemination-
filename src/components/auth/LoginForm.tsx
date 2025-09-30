@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card'
-import { toast } from 'sonner@2.0.3'
+import { toast } from 'sonner'
 import { 
   Loader2, 
   Mail, 
@@ -17,7 +17,6 @@ import {
   Shield, 
   Zap,
   ArrowRight,
-  CheckCircle,
   Info
 } from 'lucide-react'
 
@@ -26,7 +25,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onToggleMode }: LoginFormProps) {
-  const { login, loading, user } = useAuth()
+  const { login, loading } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',

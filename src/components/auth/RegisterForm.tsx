@@ -15,12 +15,7 @@ import {
   EyeOff, 
   UserPlus, 
   Sparkles, 
-  Brain, 
-  Shield, 
-  Zap,
   ArrowRight,
-  CheckCircle,
-  Target,
   Award
 } from 'lucide-react'
 
