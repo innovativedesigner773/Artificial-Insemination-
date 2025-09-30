@@ -20,8 +20,7 @@ import type {
   Question,
   QuizResult, 
   DashboardData,
-  Enrollment,
-  UploadedFile 
+  Enrollment
 } from '../../types';
 
 class FirestoreService {
@@ -135,7 +134,11 @@ class FirestoreService {
       await setDoc(doc(db, 'progress', `${userId}_${courseId}`), initialProgress);
       return initialProgress;
     }
-    return { id: progressDoc.id, ...progressDoc.data() } as Progress;
+    const data = progressDoc.data();
+    return { 
+      id: progressDoc.id, 
+      ...data 
+    } as Progress;
   }
 
   async updateProgress(userId: string, courseId: string, lessonId: string, data: {
@@ -189,7 +192,7 @@ class FirestoreService {
       ...cleanQuizData,
       totalQuestions: 0,
       createdAt: new Date().toISOString()
-    };
+    } as Quiz;
   }
 
   async getQuiz(quizId: string): Promise<Quiz> {
@@ -239,7 +242,7 @@ class FirestoreService {
     return {
       id: questionRef.id,
       ...cleanQuestionData
-    };
+    } as Question;
   }
 
   async getQuestions(quizId: string): Promise<Question[]> {
@@ -325,10 +328,18 @@ class FirestoreService {
       query(collection(db, 'enrollments'), where('userId', '==', userId))
     );
     
-    const enrollments = enrollmentsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Enrollment[];
+    const enrollments = enrollmentsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        courseId: data.courseId,
+        enrolledAt: data.enrolledAt,
+        progress: data.progress,
+        status: data.status,
+        timeSpent: data.timeSpent,
+        completedLessons: data.completedLessons
+      } as Enrollment;
+    });
     
     // Get progress data
     const progressSnapshot = await getDocs(
@@ -355,10 +366,18 @@ class FirestoreService {
       query(collection(db, 'enrollments'), where('userId', '==', userId))
     );
     
-    return enrollmentsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Enrollment[];
+    return enrollmentsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        courseId: data.courseId,
+        enrolledAt: data.enrolledAt,
+        progress: data.progress,
+        status: data.status,
+        timeSpent: data.timeSpent,
+        completedLessons: data.completedLessons
+      } as Enrollment;
+    });
   }
 
   // Course enrollment check

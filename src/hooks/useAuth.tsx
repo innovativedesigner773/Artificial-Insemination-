@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { authHelpers } from '../utils/firebase/auth'
-import type { User, SignUpData, SignInData } from '../types'
+import type { User, SignUpData } from '../types'
 
 interface AuthContextType {
   user: User | null
