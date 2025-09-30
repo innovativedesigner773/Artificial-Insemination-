@@ -7,6 +7,8 @@ export interface User {
   role: 'student' | 'instructor' | 'admin'
   organization?: string
   created_at?: string
+  accessExpiresAt?: string // ISO date string for when access expires
+  accessDuration?: number // Duration in days
 }
 
 export interface UserProfile extends User {
@@ -176,6 +178,8 @@ export interface SignUpData {
   firstName: string
   lastName: string
   organization?: string
+  accessExpiresAt?: string
+  accessDuration?: number
 }
 
 export interface SignInData {

@@ -50,18 +50,58 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
     return available || 'English'
   })
   
-  const resolveVideoUrl = (): { type: 'file' | 'youtube'; url: string } | null => {
+  const resolveVideoUrl = (): { type: 'file' | 'youtube'; url: string; videoId?: string } | null => {
     const perLang = lesson.videoSources && lesson.videoSources[selectedLanguage as keyof typeof lesson.videoSources]
     const url = perLang || lesson.videoUrl || ''
     if (!url) return null
-    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
-    if (ytMatch) {
-      return { type: 'youtube', url: `https://www.youtube.com/embed/${ytMatch[1]}` }
+    
+    // Extract YouTube video ID from various formats
+    let videoId: string | null = null
+    
+    // Check for embed URL: youtube.com/embed/VIDEO_ID
+    const embedMatch = url.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{11})/)
+    if (embedMatch) {
+      videoId = embedMatch[1]
     }
+    
+    // Check for regular watch URL: youtube.com/watch?v=VIDEO_ID
+    if (!videoId) {
+      const watchMatch = url.match(/youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/)
+      if (watchMatch) videoId = watchMatch[1]
+    }
+    
+    // Check for short URL: youtu.be/VIDEO_ID
+    if (!videoId) {
+      const shortMatch = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/)
+      if (shortMatch) videoId = shortMatch[1]
+    }
+    
+    // Check for shorts: youtube.com/shorts/VIDEO_ID
+    if (!videoId) {
+      const shortsMatch = url.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/)
+      if (shortsMatch) videoId = shortsMatch[1]
+    }
+    
+    if (videoId) {
+      return { 
+        type: 'youtube', 
+        url: `https://www.youtube.com/embed/${videoId}`,
+        videoId 
+      }
+    }
+    
     return { type: 'file', url }
   }
 
   const source = resolveVideoUrl()
+
+  // Debug logging
+  useEffect(() => {
+    if (source?.type === 'youtube') {
+      console.log('YouTube Video URL:', source.url)
+      console.log('Video ID:', source.videoId)
+    }
+  }, [source])
 
   useEffect(() => {
     const video = videoRef.current
@@ -194,39 +234,42 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
         onMouseLeave={() => setShowControls(false)}
       >
         {source && source.type === 'youtube' ? (
-          <iframe
-            className="w-full aspect-video"
-            src={`${source.url}?rel=0&modestbranding=1`}
-            title={lesson.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            src={source ? source.url : ''}
-            className="w-full aspect-video"
-            poster="https://images.unsplash.com/photo-1581092583537-40568be4efa5?w=800&h=450&fit=crop"
-            onClick={togglePlay}
-            controls={false}
-          />
-        )}
-
-        {/* Play/Pause Overlay */}
-        {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <Button
-              size="lg"
-              onClick={togglePlay}
-              className="rounded-full w-16 h-16 bg-white/20 hover:bg-white/30"
-            >
-              <Play className="h-8 w-8 ml-1" fill="white" />
-            </Button>
+          <div className="w-full aspect-video bg-black">
+            <iframe
+              className="w-full h-full border-0"
+              src={source.url}
+              title={lesson.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
           </div>
-        )}
+        ) : source ? (
+          <>
+            <video
+              ref={videoRef}
+              src={source ? source.url : ''}
+              className="w-full aspect-video"
+              poster="https://images.unsplash.com/photo-1581092583537-40568be4efa5?w=800&h=450&fit=crop"
+              onClick={togglePlay}
+              controls={false}
+            />
 
-        {/* Controls */}
-        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Play/Pause Overlay */}
+            {!isPlaying && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Button
+                  size="lg"
+                  onClick={togglePlay}
+                  className="rounded-full w-16 h-16 bg-white/20 hover:bg-white/30"
+                >
+                  <Play className="h-8 w-8 ml-1" fill="white" />
+                </Button>
+              </div>
+            )}
+
+            {/* Controls */}
+            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity ${showControls ? 'opacity-100' : 'opacity-0'}`}>
           {/* Progress Bar */}
           <div 
             className="w-full h-2 bg-white/30 rounded cursor-pointer mb-4"
@@ -325,11 +368,20 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
                 onClick={toggleFullscreen}
                 className="text-white hover:bg-white/20"
               >
-                <Maximize className="h-4 w-4" />
-              </Button>
-            </div>
+              <Maximize className="h-4 w-4" />
+            </Button>
           </div>
         </div>
+      </div>
+          </>
+        ) : (
+          <div className="w-full aspect-video bg-gray-900 flex items-center justify-center text-white">
+            <div className="text-center p-8">
+              <p className="text-lg mb-2">Video not available</p>
+              <p className="text-sm text-gray-400">Please contact support if this issue persists.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lesson Info */}

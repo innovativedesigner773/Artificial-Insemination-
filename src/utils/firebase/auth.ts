@@ -22,7 +22,9 @@ const convertFirebaseUser = async (firebaseUser: FirebaseUser): Promise<User> =>
     lastName: userData?.lastName || '',
     role: userData?.role || 'student',
     organization: userData?.organization,
-    created_at: userData?.created_at
+    created_at: userData?.created_at,
+    accessExpiresAt: userData?.accessExpiresAt,
+    accessDuration: userData?.accessDuration
   };
 };
 
@@ -43,7 +45,7 @@ export const authHelpers = {
       });
 
       // Create user document in Firestore
-      const userData = {
+      const userData: any = {
         firstName: data.firstName,
         lastName: data.lastName,
         organization: data.organization,
@@ -51,10 +53,25 @@ export const authHelpers = {
         created_at: new Date().toISOString()
       };
 
+      // Add access duration fields if provided
+      if (data.accessExpiresAt) {
+        userData.accessExpiresAt = data.accessExpiresAt;
+      }
+      if (data.accessDuration !== undefined) {
+        userData.accessDuration = data.accessDuration;
+      }
+
       await setDoc(doc(db, 'users', firebaseUser.uid), userData);
 
       // Convert to our User type
       const user = await convertFirebaseUser(firebaseUser);
+
+      // If this is batch creation (has accessExpiresAt), sign out the new user immediately
+      // This prevents auto-login during batch user creation
+      if (data.accessExpiresAt) {
+        await signOut(auth);
+        // Note: The admin stays signed in because Firebase manages sessions
+      }
       
       return { data: { user }, error: null };
     } catch (error: any) {

@@ -214,7 +214,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                 {/* Lesson Content */}
                 {currentLesson.type === 'video' && (
                   <div className="relative">
-                    <Carousel className="w-full">
+                    <Carousel key={`${currentModuleIndex}-${currentLessonIndex}`} className="w-full">
                       <CarouselContent className="items-stretch">
                         {(currentLesson.content || '')
                           .split(/\n\s*\n/)

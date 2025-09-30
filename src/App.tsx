@@ -4,6 +4,7 @@ import { AuthPage } from './components/auth/AuthPage'
 import { Navigation } from './components/layout/Navigation'
 import { StudentDashboard } from './components/dashboard/StudentDashboard'
 import { AdminDashboard } from './components/dashboard/AdminDashboard'
+import { UserManagement } from './components/dashboard/UserManagement'
 import { CourseList } from './components/courses/CourseList'
 import { CourseViewer } from './components/courses/CourseViewer'
 import { CourseCreator } from './components/courses/CourseCreator'
@@ -116,14 +117,7 @@ function AppContent() {
         case 'dashboard':
           return <AdminDashboard />
         case 'users':
-          return (
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-2xl font-bold mb-6">User Management</h2>
-                <p className="text-gray-500">User management interface will be implemented here.</p>
-              </div>
-            </div>
-          )
+          return <UserManagement />
         case 'analytics':
           return (
             <div className="max-w-4xl mx-auto">
