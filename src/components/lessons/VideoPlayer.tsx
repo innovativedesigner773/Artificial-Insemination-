@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { Button } from '../ui/button'
 import { 
+  Play,
   Pause, 
   Volume2, 
   VolumeX, 
