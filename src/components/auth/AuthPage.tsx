@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import heroLocal from '../../assets/WhatsApp Image 2025-10-01 at 13.46.18.jpeg'
 import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
@@ -66,10 +67,10 @@ export function AuthPage() {
             </p>
           </div>
 
-          <div className="hidden lg:block relative">
+          <div className="block relative">
             <div className="relative">
               <ImageWithFallback
-                src="https://farmersreview.co.bw/wp-content/uploads/2021/06/insemination-vache-afrique.jpg"
+                src={heroLocal}
                 alt="Artificial insemination in livestock"
                 className="rounded-2xl shadow-large w-full max-w-lg"
                 loading="lazy"

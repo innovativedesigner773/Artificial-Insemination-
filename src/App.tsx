@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import { AuthPage } from './components/auth/AuthPage'
 import { Navigation } from './components/layout/Navigation'
 import { StudentDashboard } from './components/dashboard/StudentDashboard'
+import { InstructorDashboard } from './components/dashboard/InstructorDashboard'
 import { AdminDashboard } from './components/dashboard/AdminDashboard'
 import { UserManagement } from './components/dashboard/UserManagement'
 import { CourseList } from './components/courses/CourseList'
@@ -27,9 +28,11 @@ function AppContent() {
   // Set initial page based on user role when user changes
   React.useEffect(() => {
     if (user?.role === 'admin') {
-      setCurrentPage('dashboard') // Admin dashboard
+      setCurrentPage('dashboard')
+    } else if (user?.role === 'instructor') {
+      setCurrentPage('instructor_dashboard')
     } else {
-      setCurrentPage('dashboard') // Student dashboard
+      setCurrentPage('dashboard')
     }
   }, [user])
 
@@ -38,6 +41,8 @@ function AppContent() {
     if (user && isAuthenticated) {
       if (user.role === 'admin') {
         toast.success(`Welcome back, ${user.firstName}! Redirecting to Admin Dashboard...`)
+      } else if (user.role === 'instructor') {
+        toast.success(`Welcome back, ${user.firstName}! Redirecting to Instructor...`)
       } else {
         toast.success(`Welcome back, ${user.firstName}!`)
       }
@@ -216,6 +221,79 @@ function AppContent() {
           )
         default:
           return <AdminDashboard />
+      }
+    }
+
+    // Instructor pages
+    if (user?.role === 'instructor') {
+      switch (currentPage) {
+        case 'instructor_dashboard':
+          return <InstructorDashboard />
+        case 'courses':
+          return (
+            <CourseList 
+              onGetStarted={(courseId: string) => {
+                setCourseDetailId(courseId)
+                setShowCourseDetail(true)
+              }}
+            />
+          )
+        case 'profile':
+          return (
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-2xl font-bold mb-6">Instructor Profile</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={user?.firstName || ''}
+                      className="w-full p-3 border border-gray-300 rounded-md"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={user?.lastName || ''}
+                      className="w-full p-3 border border-gray-300 rounded-md"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={user?.email || ''}
+                      className="w-full p-3 border border-gray-300 rounded-md"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Role
+                    </label>
+                    <input
+                      type="text"
+                      value={user?.role || ''}
+                      className="w-full p-3 border border-gray-300 rounded-md"
+                      readOnly
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        default:
+          return <InstructorDashboard />
       }
     }
 
