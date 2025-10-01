@@ -12,7 +12,8 @@ import {
   CheckCircle,
   BookOpen,
   Trophy,
-  Clock
+  Clock,
+  Globe
 } from 'lucide-react'
 import { api } from '../../services/api'
 import { getDummyCourseById } from '../../utils/dummyData'
@@ -218,33 +219,197 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
     return content
   }
 
-  // Get translated UI text
+  // Get translated educational content (courses, modules, lessons)
+  const getTranslatedEducationalContent = (type: 'course' | 'module' | 'lesson', title: string, language: string): string => {
+    const translations: Record<string, Record<string, Record<string, string>>> = {
+      course: {
+        'Artificial Insemination Basics': {
+          'Afrikaans': 'Kunsmatige Inseminasie Grondbeginsels',
+          'IsiZulu': 'Imigomo Eyisiseko Yokufakwa Kwesidoda Ngamakhono',
+          'IsiXhosa': 'Imigaqo Eyisiseko Yokufakwa Kwesidoda Ngamakhono',
+          'Sesotho': 'Melao ea Bohlokoa ea Ho Kenngwa ha Tshebe ka Boiteko',
+          'Setswana': 'Melao ya Botlhokwa ya Go Tsenngwa ga Tshebe ka Boikanyego',
+          'SiSwati': 'Imigomo Leyisiseko Yekufakwa Kwesidoda Ngemakhono',
+          'IsiNdebele': 'Imigomo Eyisiseko Yokufakwa Kwesidoda Ngamakhono',
+          'Sepedi': 'Melao ya Botlhokwa ya Go Tsenngwa ga Tshebe ka Boikanyego',
+          'Tshivenda': 'Milayo ya Vhukuma ya u Tsenngwa ha Tshebe nga Mulimo',
+          'Xitsonga': 'Milawu ya Vukorhokeri bya ku Tsenngwa ka Tshebe hi Vukorhokeri'
+        },
+        'Advanced AI & Farm Management': {
+          'Afrikaans': 'Gevorderde AI & Plaasbestuur',
+          'IsiZulu': 'I-AI Ephakeme & Ukuphathwa Kwepulazi',
+          'IsiXhosa': 'I-AI Ephakeme & Ukuphathwa Kwepulazi',
+          'Sesotho': 'AI e Phahameng & Tsamaiso ea Polasi',
+          'Setswana': 'AI e e Phakameng & Tsamaiso ya Polasi',
+          'SiSwati': 'AI Lephakeme & Kulawulwa KwePolasi',
+          'IsiNdebele': 'I-AI Ephakeme & Ukuphathwa Kwepulazi',
+          'Sepedi': 'AI e e Phakameng & Tsamaiso ya Polasi',
+          'Tshivenda': 'AI ya Vhukuma & Tshumelo ya Polasi',
+          'Xitsonga': 'AI ya Vukorhokeri & Ku Lawula ka Polasi'
+        }
+      },
+      module: {
+        'Reproductive Anatomy': {
+          'Afrikaans': 'Voortplantingsanatomie',
+          'IsiZulu': 'Isakhiwo Sokuzala',
+          'IsiXhosa': 'Isakhiwo Sokuzala',
+          'Sesotho': 'Anatomy ea Ho Tsoala',
+          'Setswana': 'Anatomy ya Go Tsoala',
+          'SiSwati': 'Anatomy Yekuzala',
+          'IsiNdebele': 'Isakhiwo Sokuzala',
+          'Sepedi': 'Anatomy ya Go Tsoala',
+          'Tshivenda': 'Anatomy ya u Tsoala',
+          'Xitsonga': 'Anatomy ya ku Tsoala'
+        },
+        'AI Procedures': {
+          'Afrikaans': 'AI Prosedures',
+          'IsiZulu': 'Inqubo Ze-AI',
+          'IsiXhosa': 'Iinkqubo Ze-AI',
+          'Sesotho': 'Mekhoa ea AI',
+          'Setswana': 'Mekgwa ya AI',
+          'SiSwati': 'Tinhlelo te-AI',
+          'IsiNdebele': 'Inqubo Ze-AI',
+          'Sepedi': 'Mekgwa ya AI',
+          'Tshivenda': 'Maitele a AI',
+          'Xitsonga': 'Mintirho ya AI'
+        },
+        'AI Fundamentals': {
+          'Afrikaans': 'AI Grondbeginsels',
+          'IsiZulu': 'Imigomo Eyisiseko Ye-AI',
+          'IsiXhosa': 'Imigaqo Eyisiseko Ye-AI',
+          'Sesotho': 'Melao ea Bohlokoa ea AI',
+          'Setswana': 'Melao ya Botlhokwa ya AI',
+          'SiSwati': 'Imigomo Leyisiseko ye-AI',
+          'IsiNdebele': 'Imigomo Eyisiseko Ye-AI',
+          'Sepedi': 'Melao ya Botlhokwa ya AI',
+          'Tshivenda': 'Milayo ya Vhukuma ya AI',
+          'Xitsonga': 'Milawu ya Vukorhokeri bya AI'
+        },
+        'Troubleshooting': {
+          'Afrikaans': 'Probleemoplossing',
+          'IsiZulu': 'Ukuxazulula Izinkinga',
+          'IsiXhosa': 'Ukuxazulula Iingxaki',
+          'Sesotho': 'Ho Rarolla Mathata',
+          'Setswana': 'Go Rarolla Mathata',
+          'SiSwati': 'Kuxazulula Tinkinga',
+          'IsiNdebele': 'Ukuxazulula Izinkinga',
+          'Sepedi': 'Go Rarolla Mathata',
+          'Tshivenda': 'U Rarola Mathata',
+          'Xitsonga': 'Ku Rarola Swiphiqo'
+        }
+      },
+      lesson: {
+        'Female Reproductive System': {
+          'Afrikaans': 'Vroulike Voortplantingsisteem',
+          'IsiZulu': 'Isistimu Yokuzala Yesifazane',
+          'IsiXhosa': 'Isistimu Sokuzala Sesifazane',
+          'Sesotho': 'Sisteme ea Ho Tsoala ea Basali',
+          'Setswana': 'Sisteme ya Go Tsoala ya Basadi',
+          'SiSwati': 'Sisteme Yekuzala Yesifati',
+          'IsiNdebele': 'Isistimu Yokuzala Yesifazane',
+          'Sepedi': 'Sisteme ya Go Tsoala ya Basadi',
+          'Tshivenda': 'Sisteme ya u Tsoala ya Vhafumakadzi',
+          'Xitsonga': 'Sisteme ya ku Tsoala ya Wansati'
+        },
+        'Male Reproductive System': {
+          'Afrikaans': 'Manlike Voortplantingsisteem',
+          'IsiZulu': 'Isistimu Yokuzala Yesilisa',
+          'IsiXhosa': 'Isistimu Sokuzala Sesilisa',
+          'Sesotho': 'Sisteme ea Ho Tsoala ea Banna',
+          'Setswana': 'Sisteme ya Go Tsoala ya Banna',
+          'SiSwati': 'Sisteme Yekuzala Yemfana',
+          'IsiNdebele': 'Isistimu Yokuzala Yesilisa',
+          'Sepedi': 'Sisteme ya Go Tsoala ya Banna',
+          'Tshivenda': 'Sisteme ya u Tsoala ya Vhanna',
+          'Xitsonga': 'Sisteme ya ku Tsoala ya Vhanna'
+        },
+        'Preparation and Hygiene': {
+          'Afrikaans': 'Voorbereiding en Higiëne',
+          'IsiZulu': 'Ukulungiselela Nokuhlanzwa',
+          'IsiXhosa': 'Ukulungiselela Nokuhlanzwa',
+          'Sesotho': 'Tlhabollo le Hlambo',
+          'Setswana': 'Tlhagiso le Tlhatlhobo',
+          'SiSwati': 'Kulungiselela Nekuhlanzwa',
+          'IsiNdebele': 'Ukulungiselela Nokuhlanzwa',
+          'Sepedi': 'Tlhagiso le Tlhatlhobo',
+          'Tshivenda': 'Tshidzulo na Tshilambu',
+          'Xitsonga': 'Ku Lungiselela ni Ku Hlambuluka'
+        },
+        'Insemination Technique': {
+          'Afrikaans': 'Inseminasietegniek',
+          'IsiZulu': 'Amakhono Okufakwa Kwesidoda',
+          'IsiXhosa': 'Amakhono Okufakwa Kwesidoda',
+          'Sesotho': 'Mokhoa oa Ho Kenngwa ha Tshebe',
+          'Setswana': 'Mokgwa wa Go Tsenngwa ga Tshebe',
+          'SiSwati': 'Makhono Ekufakwa Kwesidoda',
+          'IsiNdebele': 'Amakhono Okufakwa Kwesidoda',
+          'Sepedi': 'Mokgwa wa Go Tsenngwa ga Tshebe',
+          'Tshivenda': 'Makhono a u Tsenngwa ha Tshebe',
+          'Xitsonga': 'Makhono ya ku Tsenngwa ka Tshebe'
+        },
+        'Types of Artificial Insemination': {
+          'Afrikaans': 'Tipes Kunsmatige Inseminasie',
+          'IsiZulu': 'Izinhlobo Zokufakwa Kwesidoda Ngamakhono',
+          'IsiXhosa': 'Iintlobo Zokufakwa Kwesidoda Ngamakhono',
+          'Sesotho': 'Mefuta ea Ho Kenngwa ha Tshebe ka Boiteko',
+          'Setswana': 'Mefuta ya Go Tsenngwa ga Tshebe ka Boikanyego',
+          'SiSwati': 'Tinhlobo Tekufakwa Kwesidoda Ngemakhono',
+          'IsiNdebele': 'Izinhlobo Zokufakwa Kwesidoda Ngamakhono',
+          'Sepedi': 'Mefuta ya Go Tsenngwa ga Tshebe ka Boikanyego',
+          'Tshivenda': 'Mihango ya u Tsenngwa ha Tshebe nga Mulimo',
+          'Xitsonga': 'Swihlovo swa ku Tsenngwa ka Tshebe hi Vukorhokeri'
+        },
+        'Quick Check: Anatomy': {
+          'Afrikaans': 'Vinnige Kontrole: Anatomie',
+          'IsiZulu': 'Ukuhlolwa Okusheshayo: Isakhiwo',
+          'IsiXhosa': 'Ukuhlolwa Okukhawulezayo: Isakhiwo',
+          'Sesotho': 'Tlhahlobo e Potlakileng: Anatomy',
+          'Setswana': 'Tlhahlobo e e Potlakileng: Anatomy',
+          'SiSwati': 'Kuhlolwa Lokusheshayo: Anatomy',
+          'IsiNdebele': 'Ukuhlolwa Okusheshayo: Isakhiwo',
+          'Sepedi': 'Tlhahlobo e e Potlakileng: Anatomy',
+          'Tshivenda': 'Tshidzudzanyo tsha Vhukuma: Anatomy',
+          'Xitsonga': 'Ku Kambela ka Vukorhokeri: Anatomy'
+        },
+        'Quick Check: Procedures': {
+          'Afrikaans': 'Vinnige Kontrole: Prosedures',
+          'IsiZulu': 'Ukuhlolwa Okusheshayo: Inqubo',
+          'IsiXhosa': 'Ukuhlolwa Okukhawulezayo: Iinkqubo',
+          'Sesotho': 'Tlhahlobo e Potlakileng: Mekhoa',
+          'Setswana': 'Tlhahlobo e e Potlakileng: Mekgwa',
+          'SiSwati': 'Kuhlolwa Lokusheshayo: Tinhlelo',
+          'IsiNdebele': 'Ukuhlolwa Okusheshayo: Inqubo',
+          'Sepedi': 'Tlhahlobo e e Potlakileng: Mekgwa',
+          'Tshivenda': 'Tshidzudzanyo tsha Vhukuma: Maitele',
+          'Xitsonga': 'Ku Kambela ka Vukorhokeri: Mintirho'
+        },
+        'Detecting Estrus': {
+          'Afrikaans': 'Estrus Opsporing',
+          'IsiZulu': 'Ukuthola I-Estrus',
+          'IsiXhosa': 'Ukufumana I-Estrus',
+          'Sesotho': 'Ho Fumana Estrus',
+          'Setswana': 'Go Fitlhelela Estrus',
+          'SiSwati': 'Kutfola Estrus',
+          'IsiNdebele': 'Ukuthola I-Estrus',
+          'Sepedi': 'Go Fitlhelela Estrus',
+          'Tshivenda': 'U Wana Estrus',
+          'Xitsonga': 'Ku Kuma Estrus'
+        }
+      }
+    }
+
+    // Check if we have a translation for this content
+    if (translations[type] && translations[type][title] && translations[type][title][language]) {
+      return translations[type][title][language]
+    }
+
+    // Fallback to original title if no translation available
+    return title
+  }
+
+  // Get translated UI text (only for essential educational elements)
   const getTranslatedText = (key: string, language: string): string => {
     const uiTranslations: Record<string, Record<string, string>> = {
-      'Lesson Video': {
-        'Afrikaans': 'Les Video',
-        'IsiZulu': 'Ividiyo Yesifundo',
-        'IsiXhosa': 'Ividiyo Yesifundo',
-        'Sesotho': 'Video ea Thuto',
-        'Setswana': 'Video ya Thuto',
-        'SiSwati': 'Ividiyo Yesifundo',
-        'IsiNdebele': 'Ividiyo Yesifundo',
-        'Sepedi': 'Video ya Thuto',
-        'Tshivenda': 'Video ya Thuto',
-        'Xitsonga': 'Video ya Thuto'
-      },
-      'Watch the instructional video for this lesson': {
-        'Afrikaans': 'Kyk na die instruksie-video vir hierdie les',
-        'IsiZulu': 'Buka ividiyo yemiyalo yesifundo',
-        'IsiXhosa': 'Bona ividiyo yemiyalo yesifundo',
-        'Sesotho': 'Sheba video ea tlhahiso ea thuto ena',
-        'Setswana': 'Lebelela video ya taelo ya thuto eno',
-        'SiSwati': 'Buka ividiyo yemiyalo yesifundo',
-        'IsiNdebele': 'Buka ividiyo yemiyalo yesifundo',
-        'Sepedi': 'Lebelela video ya taelo ya thuto eno',
-        'Tshivenda': 'Vhona video ya taelo ya thuto iyi',
-        'Xitsonga': 'Vona video ya taelo ya thuto leyi'
-      },
       'Key Concepts': {
         'Afrikaans': 'Sleutelkonsepte',
         'IsiZulu': 'Imiqondo Eyinhloko',
@@ -293,270 +458,6 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
         'Tshivenda': 'Lingedza pfeseso ya vhugudo ha thuto iyi',
         'Xitsonga': 'Lingedza pfeseso ya vhugudo ha thuto leyi'
       },
-      'Back to Courses': {
-        'Afrikaans': 'Terug na Kursusse',
-        'IsiZulu': 'Buyela Emakhosini',
-        'IsiXhosa': 'Buyela Kwizifundo',
-        'Sesotho': 'Khoela Ho Likorase',
-        'Setswana': 'Boela Kwa Dithuto',
-        'SiSwati': 'Buyela Emakhosini',
-        'IsiNdebele': 'Buyela Emakhosini',
-        'Sepedi': 'Boela Kwa Dithuto',
-        'Tshivenda': 'Vhuyelela Kha Dithuto',
-        'Xitsonga': 'Hluvukela Eka Dithuto'
-      },
-      'Lesson': {
-        'Afrikaans': 'Les',
-        'IsiZulu': 'Isifundo',
-        'IsiXhosa': 'Isifundo',
-        'Sesotho': 'Thuto',
-        'Setswana': 'Thuto',
-        'SiSwati': 'Isifundo',
-        'IsiNdebele': 'Isifundo',
-        'Sepedi': 'Thuto',
-        'Tshivenda': 'Thuto',
-        'Xitsonga': 'Thuto'
-      },
-      'of': {
-        'Afrikaans': 'van',
-        'IsiZulu': 'kwe',
-        'IsiXhosa': 'kwe',
-        'Sesotho': 'ho',
-        'Setswana': 'ya',
-        'SiSwati': 'kwe',
-        'IsiNdebele': 'kwe',
-        'Sepedi': 'ya',
-        'Tshivenda': 'ya',
-        'Xitsonga': 'ya'
-      },
-      'min': {
-        'Afrikaans': 'min',
-        'IsiZulu': 'min',
-        'IsiXhosa': 'min',
-        'Sesotho': 'min',
-        'Setswana': 'min',
-        'SiSwati': 'min',
-        'IsiNdebele': 'min',
-        'Sepedi': 'min',
-        'Tshivenda': 'min',
-        'Xitsonga': 'min'
-      },
-      'Language:': {
-        'Afrikaans': 'Taal:',
-        'IsiZulu': 'Ulimi:',
-        'IsiXhosa': 'Ulwimi:',
-        'Sesotho': 'Puo:',
-        'Setswana': 'Puo:',
-        'SiSwati': 'Lulwimi:',
-        'IsiNdebele': 'Ulimi:',
-        'Sepedi': 'Puo:',
-        'Tshivenda': 'Luambo:',
-        'Xitsonga': 'Ririmi:'
-      },
-      'Complete': {
-        'Afrikaans': 'Voltooi',
-        'IsiZulu': 'Qedile',
-        'IsiXhosa': 'Gqityiwe',
-        'Sesotho': 'Fetile',
-        'Setswana': 'Fetile',
-        'SiSwati': 'Qedile',
-        'IsiNdebele': 'Qedile',
-        'Sepedi': 'Fetile',
-        'Tshivenda': 'Fhedzi',
-        'Xitsonga': 'Fetile'
-      },
-      'lessons': {
-        'Afrikaans': 'lesse',
-        'IsiZulu': 'izifundo',
-        'IsiXhosa': 'izifundo',
-        'Sesotho': 'dithuto',
-        'Setswana': 'dithuto',
-        'SiSwati': 'tifundo',
-        'IsiNdebele': 'izifundo',
-        'Sepedi': 'dithuto',
-        'Tshivenda': 'dithuto',
-        'Xitsonga': 'dithuto'
-      },
-      'Duration:': {
-        'Afrikaans': 'Duur:',
-        'IsiZulu': 'Isikhathi:',
-        'IsiXhosa': 'Ixesha:',
-        'Sesotho': 'Nako:',
-        'Setswana': 'Nako:',
-        'SiSwati': 'Sikhatsi:',
-        'IsiNdebele': 'Isikhathi:',
-        'Sepedi': 'Nako:',
-        'Tshivenda': 'Nga:',
-        'Xitsonga': 'Nkarhi:'
-      },
-      'minutes': {
-        'Afrikaans': 'minute',
-        'IsiZulu': 'amaminithi',
-        'IsiXhosa': 'iimizuzu',
-        'Sesotho': 'metsotso',
-        'Setswana': 'ditsotso',
-        'SiSwati': 'emaminithi',
-        'IsiNdebele': 'amaminithi',
-        'Sepedi': 'ditsotso',
-        'Tshivenda': 'mitsotso',
-        'Xitsonga': 'mintsotso'
-      },
-      'Video Lesson': {
-        'Afrikaans': 'Video Les',
-        'IsiZulu': 'Isifundo Sevidiyo',
-        'IsiXhosa': 'Isifundo Sevidiyo',
-        'Sesotho': 'Thuto ea Video',
-        'Setswana': 'Thuto ya Video',
-        'SiSwati': 'Sifundo Sevidiyo',
-        'IsiNdebele': 'Isifundo Sevidiyo',
-        'Sepedi': 'Thuto ya Video',
-        'Tshivenda': 'Thuto ya Video',
-        'Xitsonga': 'Thuto ya Video'
-      },
-      'Progress:': {
-        'Afrikaans': 'Vordering:',
-        'IsiZulu': 'Intuthuko:',
-        'IsiXhosa': 'Intshukumo:',
-        'Sesotho': 'Ntšo:',
-        'Setswana': 'Tswelopele:',
-        'SiSwati': 'Intfutfuko:',
-        'IsiNdebele': 'Intuthuko:',
-        'Sepedi': 'Tswelopele:',
-        'Tshivenda': 'Tshumiselo:',
-        'Xitsonga': 'Ntirhisano:'
-      },
-      'Previous': {
-        'Afrikaans': 'Vorige',
-        'IsiZulu': 'Okwangaphambilini',
-        'IsiXhosa': 'Okwangaphambili',
-        'Sesotho': 'E fetileng',
-        'Setswana': 'E fetileng',
-        'SiSwati': 'Lokudlule',
-        'IsiNdebele': 'Okwangaphambilini',
-        'Sepedi': 'E fetileng',
-        'Tshivenda': 'E tshi fhiraho',
-        'Xitsonga': 'E ku nga endzhaku'
-      },
-      'Next': {
-        'Afrikaans': 'Volgende',
-        'IsiZulu': 'Okulandelayo',
-        'IsiXhosa': 'Okulandelayo',
-        'Sesotho': 'E tlang',
-        'Setswana': 'E e tlang',
-        'SiSwati': 'Lokulandzelako',
-        'IsiNdebele': 'Okulandelayo',
-        'Sepedi': 'E e tlang',
-        'Tshivenda': 'E tshi taka',
-        'Xitsonga': 'E ku nga emahlweni'
-      },
-      'Navigate': {
-        'Afrikaans': 'Navigeer',
-        'IsiZulu': 'Hamba',
-        'IsiXhosa': 'Hamba',
-        'Sesotho': 'Tsa',
-        'Setswana': 'Tsamaya',
-        'SiSwati': 'Hamba',
-        'IsiNdebele': 'Hamba',
-        'Sepedi': 'Tsamaya',
-        'Tshivenda': 'Tshimbila',
-        'Xitsonga': 'Tshama'
-      },
-      'Course not found': {
-        'Afrikaans': 'Kursus nie gevind nie',
-        'IsiZulu': 'Ikosi ayitholakalanga',
-        'IsiXhosa': 'Isifundo asifunyenwanga',
-        'Sesotho': 'Korase ha e fumanahala',
-        'Setswana': 'Thuto ga e fitlhehala',
-        'SiSwati': 'Khoshi ayitholakali',
-        'IsiNdebele': 'Ikosi ayitholakalanga',
-        'Sepedi': 'Thuto ga e fitlhehala',
-        'Tshivenda': 'Thuto a i wanali',
-        'Xitsonga': 'Thuto a yi kumeki'
-      },
-      'Course Modules': {
-        'Afrikaans': 'Kursus Modules',
-        'IsiZulu': 'Amamojula Ekosi',
-        'IsiXhosa': 'Iimojula Zesifundo',
-        'Sesotho': 'Likarolo tsa Korase',
-        'Setswana': 'Dikarolo tsa Thuto',
-        'SiSwati': 'Emamojula Ekoshi',
-        'IsiNdebele': 'Amamojula Ekosi',
-        'Sepedi': 'Dikarolo tsa Thuto',
-        'Tshivenda': 'Mikumbulo ya Thuto',
-        'Xitsonga': 'Swikarhi swa Thuto'
-      },
-      'Your Progress': {
-        'Afrikaans': 'Jou Vordering',
-        'IsiZulu': 'Intuthuko Yakho',
-        'IsiXhosa': 'Intshukumo Yakho',
-        'Sesotho': 'Ntšo ea Hao',
-        'Setswana': 'Tswelopele ya Gago',
-        'SiSwati': 'Intfutfuko Yakho',
-        'IsiNdebele': 'Intuthuko Yakho',
-        'Sepedi': 'Tswelopele ya Gago',
-        'Tshivenda': 'Tshumiselo Thau',
-        'Xitsonga': 'Ntirhisano Wa Wena'
-      },
-      'Completed': {
-        'Afrikaans': 'Voltooi',
-        'IsiZulu': 'Kuqediwe',
-        'IsiXhosa': 'Kugqityiwe',
-        'Sesotho': 'Ho fetile',
-        'Setswana': 'Go fetile',
-        'SiSwati': 'Kuphelile',
-        'IsiNdebele': 'Kuqediwe',
-        'Sepedi': 'Go fetile',
-        'Tshivenda': 'Hu fhedzi',
-        'Xitsonga': 'Ku fete'
-      },
-      'Total': {
-        'Afrikaans': 'Totaal',
-        'IsiZulu': 'Isamba',
-        'IsiXhosa': 'Isamba',
-        'Sesotho': 'Kakaretso',
-        'Setswana': 'Kakaretso',
-        'SiSwati': 'Sisamba',
-        'IsiNdebele': 'Isamba',
-        'Sepedi': 'Kakaretso',
-        'Tshivenda': 'Tshifhinganyana',
-        'Xitsonga': 'Xikarhi'
-      },
-      'Time Spent': {
-        'Afrikaans': 'Tyd Bestee',
-        'IsiZulu': 'Isikhathi Esichithiwe',
-        'IsiXhosa': 'Ixesha Elichithiweyo',
-        'Sesotho': 'Nako e Sebelitsoeng',
-        'Setswana': 'Nako e e Tseilweng',
-        'SiSwati': 'Sikhatsi Lesichitjiwe',
-        'IsiNdebele': 'Isikhathi Esichithiwe',
-        'Sepedi': 'Nako e e Tseilweng',
-        'Tshivenda': 'Nga i Tshi Tshumiswa',
-        'Xitsonga': 'Nkarhi Lowu Tirhisiwaka'
-      },
-      'Overall Progress': {
-        'Afrikaans': 'Algehele Vordering',
-        'IsiZulu': 'Intuthuko Ephelele',
-        'IsiXhosa': 'Intshukumo Epheleleyo',
-        'Sesotho': 'Ntšo e Felletseng',
-        'Setswana': 'Tswelopele e e Felletseng',
-        'SiSwati': 'Intfutfuko Lephelele',
-        'IsiNdebele': 'Intuthuko Ephelele',
-        'Sepedi': 'Tswelopele e e Felletseng',
-        'Tshivenda': 'Tshumiselo Tsho Fhelelaho',
-        'Xitsonga': 'Ntirhisano Lowu Feleriweke'
-      },
-      'Keyboard shortcuts:': {
-        'Afrikaans': 'Sleutelbord kortpaaie:',
-        'IsiZulu': 'Izingcindezo zekhibhodi:',
-        'IsiXhosa': 'Iingcindezo zekhibhodi:',
-        'Sesotho': 'Mekhoa e khutšoanyane ea khibhode:',
-        'Setswana': 'Mekgwa e mekhutshwane ya khibhoto:',
-        'SiSwati': 'Tingcindezo tekhibhodi:',
-        'IsiNdebele': 'Izingcindezo zekhibhodi:',
-        'Sepedi': 'Mekgwa e mekhutshwane ya khibhoto:',
-        'Tshivenda': 'Mihanda ya khibhodo:',
-        'Xitsonga': 'Switshukumo swa khibhoto:'
-      },
       'Start Watching': {
         'Afrikaans': 'Begin Kyk',
         'IsiZulu': 'Qala Ukubuka',
@@ -580,42 +481,6 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
         'Sepedi': 'Tshwaetsa E le E Fetileng',
         'Tshivenda': 'Shimbidza E ri E Fhedzi',
         'Xitsonga': 'Khomba Eka Ku Fete'
-      },
-      'Video not available': {
-        'Afrikaans': 'Video nie beskikbaar nie',
-        'IsiZulu': 'Ividiyo ayitholakali',
-        'IsiXhosa': 'Ividiyo ayifumaneki',
-        'Sesotho': 'Video ha e fumanahale',
-        'Setswana': 'Video ga e fitlhehale',
-        'SiSwati': 'Vidiyo ayitholakali',
-        'IsiNdebele': 'Ividiyo ayitholakali',
-        'Sepedi': 'Video ga e fitlhehale',
-        'Tshivenda': 'Video a i wanali',
-        'Xitsonga': 'Video a yi kumeki'
-      },
-      'Please contact support if this issue persists.': {
-        'Afrikaans': 'Kontak asseblief ondersteuning as hierdie probleem voortduur.',
-        'IsiZulu': 'Sicela uxhumane nokusekelwa uma lenkinga iqhubeka.',
-        'IsiXhosa': 'Nceda uqhagamshelane nenkxaso ukuba eli ngxaki liqhubeka.',
-        'Sesotho': 'Ka kopo ikopanye le tšehetso haeba bothata bo tsoela pele.',
-        'Setswana': 'Tsweetswee ikgolaganye le thekgo fa bothata jono bo tswelela.',
-        'SiSwati': 'Sicela uxhumane nentfutfuko uma lenkinga iqhubeka.',
-        'IsiNdebele': 'Sicela uxhumane nokusekelwa uma lenkinga iqhubeka.',
-        'Sepedi': 'Tsweetswee ikgolaganye le thekgo ge bothata bjo bo tswelela.',
-        'Tshivenda': 'Ndi khou humbela u vhudzane na tshetshedzo arali mulandu u tshi khou tswela.',
-        'Xitsonga': 'Hi kombela u vuxana na nhlayiso loko xiphiqo xi tswela.'
-      },
-      'Courses': {
-        'Afrikaans': 'Kursusse',
-        'IsiZulu': 'Amakhosi',
-        'IsiXhosa': 'Izifundo',
-        'Sesotho': 'Likorase',
-        'Setswana': 'Dithuto',
-        'SiSwati': 'Amakhoshi',
-        'IsiNdebele': 'Amakhosi',
-        'Sepedi': 'Dithuto',
-        'Tshivenda': 'Dithuto',
-        'Xitsonga': 'Dithuto'
       }
     }
 
@@ -812,9 +677,9 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
   if (!course) {
     return (
       <div className="text-center py-12">
-        <p>{getTranslatedText('Course not found', selectedLanguage)}</p>
+        <p>Course not found</p>
         <Button onClick={onBack} className="mt-4">
-          {getTranslatedText('Back to Courses', selectedLanguage)}
+          Back to Courses
         </Button>
       </div>
     )
@@ -833,40 +698,41 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
           <div className="flex items-center gap-4 mb-3">
             <Button variant="ghost" onClick={onBack} className="hover:bg-gray-100 transition-colors">
               <ChevronLeft className="h-4 w-4 mr-1" />
-              {getTranslatedText('Back to Courses', selectedLanguage)}
+              Back to Courses
             </Button>
             <div className="flex items-center text-sm text-gray-500">
-              <span>{getTranslatedText('Courses', selectedLanguage)}</span>
+              <span>Courses</span>
               <ChevronRight className="h-3 w-3 mx-2" />
-              <span className="font-medium text-gray-700">{course.title}</span>
+              <span className="font-medium text-gray-700">{getTranslatedEducationalContent('course', course.title, selectedLanguage)}</span>
             </div>
           </div>
           
           {/* Main header content */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">{course.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">{getTranslatedEducationalContent('course', course.title, selectedLanguage)}</h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-1">
-                  <span className="font-medium">{getTranslatedText('Lesson', selectedLanguage)} {currentLessonNumber}</span>
-                  <span>{getTranslatedText('of', selectedLanguage)} {totalLessons}</span>
+                  <span className="font-medium">Lesson {currentLessonNumber}</span>
+                  <span>of {totalLessons}</span>
                 </span>
                 <span className="text-gray-400">•</span>
-                <span className="font-medium">{currentLesson?.title}</span>
+                <span className="font-medium">{getTranslatedEducationalContent('lesson', currentLesson?.title || '', selectedLanguage)}</span>
                 <span className="text-gray-400">•</span>
-                <span>{currentLesson?.duration} {getTranslatedText('min', selectedLanguage)}</span>
+                <span>{currentLesson?.duration} min</span>
               </div>
             </div>
             
             {/* Progress section */}
             <div className="flex items-center gap-6">
-              {/* Language Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">{getTranslatedText('Language:', selectedLanguage)}</span>
+              {/* Language Selector - More Prominent */}
+              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 shadow-sm">
+                <Globe className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Language:</span>
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="text-sm font-medium bg-white border border-blue-300 rounded-md px-2 py-1 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
                 >
                   {languages.map((lang) => (
                     <option key={lang.code} value={lang.nativeName}>
@@ -879,10 +745,10 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium text-gray-900">
-                    {Math.round(getOverallProgress())}% {getTranslatedText('Complete', selectedLanguage)}
+                    {Math.round(getOverallProgress())}% Complete
                   </div>
                   <div className="text-xs text-gray-500">
-                    {progress?.completedLessons.length || 0} {getTranslatedText('of', selectedLanguage)} {totalLessons} {getTranslatedText('lessons', selectedLanguage)}
+                    {progress?.completedLessons.length || 0} of {totalLessons} lessons
                   </div>
                 </div>
                 <Progress 
@@ -896,9 +762,9 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8">
           {/* Course Content */}
-          <div className="lg:col-span-3">
+          <div className="xl:col-span-3 order-2 xl:order-1">
             {currentLesson && (
               <div className="space-y-8">
                 {/* Lesson Content */}
@@ -913,8 +779,8 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                               <Play className="h-4 w-4 text-blue-600" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-gray-900">{getTranslatedText('Lesson Video', selectedLanguage)}</h3>
-                              <p className="text-gray-600 text-sm">{getTranslatedText('Watch the instructional video for this lesson', selectedLanguage)}</p>
+                              <h3 className="text-lg font-semibold text-gray-900">Lesson Video</h3>
+                              <p className="text-gray-600 text-sm">Watch the instructional video for this lesson</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -938,14 +804,14 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                       </div>
                       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>{getTranslatedText('Duration:', selectedLanguage)} {currentLesson.duration} {getTranslatedText('minutes', selectedLanguage)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span>{getTranslatedText('Video Lesson', selectedLanguage)}</span>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>Duration: {currentLesson.duration} minutes</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span>Video Lesson</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1071,17 +937,17 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                     className="flex items-center gap-2 hover:bg-gray-50 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    <span>{getTranslatedText('Previous', selectedLanguage)}</span>
+                    <span>Previous</span>
                     <span className="text-xs text-gray-400 ml-2">←</span>
                   </Button>
 
                   <div className="flex items-center gap-4 text-sm text-gray-500">
                     <div className="flex items-center gap-2">
-                      <span>{getTranslatedText('Keyboard shortcuts:', selectedLanguage)}</span>
+                      <span>Keyboard shortcuts:</span>
                       <div className="flex items-center gap-1">
                         <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">←</kbd>
                         <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">→</kbd>
-                        <span className="text-xs">{getTranslatedText('Navigate', selectedLanguage)}</span>
+                        <span className="text-xs">Navigate</span>
                       </div>
                     </div>
                   </div>
@@ -1092,7 +958,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                              currentLessonIndex === course.modules[currentModuleIndex].lessons.length - 1}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 transition-colors"
                   >
-                    <span>{getTranslatedText('Next', selectedLanguage)}</span>
+                    <span>Next</span>
                     <ChevronRight className="h-4 w-4" />
                     <span className="text-xs text-blue-200 ml-2">→</span>
                   </Button>
@@ -1102,20 +968,25 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
           </div>
 
           {/* Course Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-1 xl:order-2">
             {/* Course Info */}
-            <Card className="shadow-sm border-gray-200">
-              <CardHeader className="pb-4">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-green-50/30 backdrop-blur-sm">
+              <CardHeader className="pb-4 bg-gradient-to-r from-primary-green to-secondary-green text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                  {getTranslatedText('Course Modules', selectedLanguage)}
+                  <BookOpen className="h-5 w-5" />
+                  Course Modules
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-6">
                 {course.modules.map((module, moduleIndex) => (
-                  <div key={module.id} className="space-y-2">
-                    <h4 className="font-medium">{module.title}</h4>
-                    <div className="space-y-1">
+                  <div key={module.id} className="space-y-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 bg-primary-green rounded-full"></div>
+                      <h4 className="font-semibold text-primary-green text-base">
+                        {getTranslatedEducationalContent('module', module.title, selectedLanguage)}
+                      </h4>
+                    </div>
+                    <div className="space-y-2 ml-4">
                       {module.lessons.map((lesson, lessonIndex) => {
                         const isCompleted = isLessonCompleted(moduleIndex, lessonIndex)
                         const canAccess = canAccessLesson(moduleIndex, lessonIndex)
@@ -1128,43 +999,53 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                             size="sm"
                             onClick={() => navigateToLesson(moduleIndex, lessonIndex)}
                             disabled={!canAccess}
-                            className={`w-full justify-start h-auto p-3 transition-all duration-200 ${
+                            className={`w-full justify-start h-auto p-4 transition-all duration-300 rounded-lg border ${
                               isCurrent 
-                                ? 'bg-blue-600 text-white shadow-md' 
+                                ? 'bg-primary-green text-white shadow-lg border-primary-green hover:bg-secondary-green' 
                                 : isCompleted 
-                                  ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                                  ? 'bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300 hover:shadow-md' 
                                   : canAccess
-                                    ? 'hover:bg-gray-50 hover:shadow-sm'
-                                    : 'opacity-50 cursor-not-allowed'
+                                    ? 'hover:bg-sky-blue/10 hover:border-sky-blue/20 hover:shadow-sm border-gray-200'
+                                    : 'opacity-50 cursor-not-allowed border-gray-100'
                             }`}
                           >
-                            <div className="flex items-center gap-3 w-full">
-                              {lesson.type === 'video' ? (
-                                <Play className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-blue-600'}`} />
-                              ) : (
-                                <Trophy className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-yellow-600'}`} />
-                              )}
-                              <div className="flex-1 text-left">
-                                <div className={`text-sm font-medium ${isCurrent ? 'text-white' : 'text-gray-900'}`}>
-                                  {lesson.title}
-                                </div>
-                                <div className={`text-xs ${isCurrent ? 'text-blue-100' : 'text-gray-500'}`}>
-                                  {lesson.duration} min
+                            <div className="flex items-center w-full justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                {lesson.type === 'video' ? (
+                                  <div className={`p-2 rounded-lg ${isCurrent ? 'bg-white/20' : 'bg-sky-blue/10'}`}>
+                                    <Play className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-sky-blue'}`} />
+                                  </div>
+                                ) : (
+                                  <div className={`p-2 rounded-lg ${isCurrent ? 'bg-white/20' : 'bg-warm-yellow/10'}`}>
+                                    <Trophy className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-warm-yellow'}`} />
+                                  </div>
+                                )}
+                                <div className="text-left min-w-0">
+                                  <div className={`truncate text-sm font-medium ${isCurrent ? 'text-white' : 'text-neutral-dark'}`}>
+                                    {getTranslatedEducationalContent('lesson', lesson.title, selectedLanguage)}
+                                  </div>
+                                  <div className={`text-xs ${isCurrent ? 'text-white/80' : 'text-gray-500'}`}>
+                                    {lesson.duration} min
+                                  </div>
                                 </div>
                               </div>
-                              {isCompleted && (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              )}
-                              {isCurrent && (
-                                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                              )}
+                              <div className="flex items-center gap-2 shrink-0">
+                                {isCompleted && (
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100">
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  </span>
+                                )}
+                                {isCurrent && (
+                                  <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${isCurrent ? 'bg-white' : 'bg-primary-green'}`}></span>
+                                )}
+                              </div>
                             </div>
                           </Button>
                         )
                       })}
                     </div>
                     {moduleIndex < course.modules.length - 1 && (
-                      <Separator className="my-2" />
+                      <Separator className="my-4 bg-gradient-to-r from-transparent via-primary-green/20 to-transparent" />
                     )}
                   </div>
                 ))}
@@ -1172,30 +1053,30 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
             </Card>
 
             {/* Progress Stats */}
-            <Card className="shadow-sm border-gray-200">
-              <CardHeader className="pb-4">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-sky-blue/5 backdrop-blur-sm">
+              <CardHeader className="pb-4 bg-gradient-to-r from-sky-blue to-primary-green text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                  <Trophy className="h-5 w-5 text-yellow-600" />
-                  {getTranslatedText('Your Progress', selectedLanguage)}
+                  <Trophy className="h-5 w-5" />
+                  Your Progress
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-center p-4 bg-gradient-to-br from-sky-blue/10 to-sky-blue/5 rounded-xl border border-sky-blue/20 hover:shadow-md transition-all duration-300">
+                    <div className="text-2xl font-bold text-sky-blue">
                       {progress?.completedLessons.length || 0}
                     </div>
-                    <div className="text-sm text-gray-600">{getTranslatedText('Completed', selectedLanguage)}</div>
+                    <div className="text-sm text-gray-600 font-medium">Completed</div>
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
+                  <div className="text-center p-4 bg-gradient-to-br from-primary-green/10 to-secondary-green/5 rounded-xl border border-primary-green/20 hover:shadow-md transition-all duration-300">
+                    <div className="text-2xl font-bold text-primary-green">
                       {totalLessons}
                     </div>
-                    <div className="text-sm text-gray-600">{getTranslatedText('Total', selectedLanguage)}</div>
+                    <div className="text-sm text-gray-600 font-medium">Total</div>
                   </div>
                 </div>
-                <div className="text-center p-3 bg-purple-50 rounded-lg">
-                  <div className="text-lg font-bold text-purple-600">
+                <div className="text-center p-4 bg-gradient-to-br from-warm-yellow/10 to-warm-yellow/5 rounded-xl border border-warm-yellow/20 hover:shadow-md transition-all duration-300">
+                  <div className="text-lg font-bold text-warm-yellow">
                     {(() => {
                       // Calculate realistic time based on completed lessons using actual durations
                       if (!course || !progress) return '0h 0m'
@@ -1215,16 +1096,25 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                       return `${hours}h ${minutes}m`
                     })()}
                   </div>
-                  <div className="text-sm text-gray-600">{getTranslatedText('Time Spent', selectedLanguage)}</div>
+                  <div className="text-sm text-gray-600 font-medium">Time Spent</div>
                 </div>
                 
                 {/* Overall progress bar */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">{getTranslatedText('Overall Progress', selectedLanguage)}</span>
-                    <span className="text-gray-600">{Math.round(getOverallProgress())}%</span>
+                    <span className="font-semibold text-neutral-dark">Overall Progress</span>
+                    <span className="text-primary-green font-bold">{Math.round(getOverallProgress())}%</span>
                   </div>
-                  <Progress value={getOverallProgress()} className="h-2" />
+                  <div className="relative">
+                    <Progress 
+                      value={getOverallProgress()} 
+                      className="h-3 bg-gray-200 rounded-full overflow-hidden"
+                    />
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary-green to-secondary-green rounded-full transition-all duration-500"
+                      style={{ width: `${getOverallProgress()}%` }}
+                    ></div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
