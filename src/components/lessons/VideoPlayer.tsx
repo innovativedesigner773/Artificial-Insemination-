@@ -1,16 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
 import { 
-  Play, 
   Pause, 
   Volume2, 
   VolumeX, 
   Maximize, 
   SkipBack, 
-  SkipForward,
-  Clock,
-  CheckCircle
+  SkipForward
 } from 'lucide-react'
 import { api } from '../../services/api'
 import type { Lesson } from '../../types'
@@ -33,7 +28,6 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete, selected
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showControls, setShowControls] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
-  const [youtubeStarted, setYoutubeStarted] = useState(false)
 
   // Get translated UI text
   const getTranslatedText = (key: string, language: string): string => {
@@ -147,7 +141,6 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete, selected
   // For YouTube videos, we can't track progress automatically
   // So we'll provide a manual completion button
   const handleYouTubeStart = () => {
-    setYoutubeStarted(true)
     onProgress(10) // Mark as started
   }
 
