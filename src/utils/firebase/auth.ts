@@ -46,11 +46,11 @@ export const authHelpers = {
       });
 
       // Determine role based on selected plan
-      // If a plan is selected, user is a paying customer and should be 'admin'
+      // If a plan is selected, user is a paying customer and should be 'instructor'
       // Otherwise, default to 'student' or use provided role
       let userRole: 'student' | 'instructor' | 'admin' = 'student';
       if (data.selectedPlan) {
-        userRole = 'admin'; // Paying customers get admin access
+        userRole = 'instructor'; // Paying customers get instructor access
       } else if (data.role) {
         userRole = data.role; // Use explicitly provided role
       }
