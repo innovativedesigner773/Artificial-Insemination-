@@ -43,7 +43,7 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
   const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Different navigation items for admin users
+  // Different navigation items by role
   const getNavItems = () => {
     if (user?.role === 'admin') {
       return [
@@ -54,7 +54,15 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
         { id: 'reports', label: 'Reports', icon: FileText, color: 'text-orange-500' },
       ]
     }
-    
+
+    if (user?.role === 'instructor') {
+      return [
+        { id: 'instructor_dashboard', label: 'Analytics', icon: BarChart3, color: 'text-purple-500' },
+        { id: 'enrollment', label: 'Enrollment', icon: Users, color: 'text-blue-500' },
+        { id: 'courses', label: 'Courses', icon: BookOpen, color: 'text-green-500' },
+      ]
+    }
+
     return [
       { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'text-blue-500' },
       { id: 'courses', label: 'Courses', icon: BookOpen, color: 'text-green-500' },

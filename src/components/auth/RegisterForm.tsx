@@ -47,6 +47,11 @@ export function RegisterForm({ onToggleMode, selectedPlan, onChangePlan }: Regis
       return
     }
 
+    if (!selectedPlan) {
+      toast.error('Please select a plan to create your account')
+      return
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match')
       return
@@ -64,14 +69,10 @@ export function RegisterForm({ onToggleMode, selectedPlan, onChangePlan }: Regis
         firstName: formData.firstName,
         lastName: formData.lastName,
         organization: formData.organization,
-        selectedPlan: selectedPlan || undefined, // Pass the selected plan
+        selectedPlan: selectedPlan, // Pass the selected plan (now required)
       })
       
-      if (selectedPlan) {
-        toast.success(`Account created successfully! You're registered for the ${selectedPlan} plan.`)
-      } else {
-        toast.success('Account created successfully!')
-      }
+      toast.success(`Account created successfully! You're registered for the ${selectedPlan} plan and have instructor access.`)
     } catch (error) {
       console.error('Registration error:', error)
       toast.error(error instanceof Error ? error.message : 'Registration failed')
@@ -95,15 +96,15 @@ export function RegisterForm({ onToggleMode, selectedPlan, onChangePlan }: Regis
           <div>
             <CardTitle className="text-3xl font-bold text-white">Create Account</CardTitle>
             <CardDescription className="text-white/80">
-              Join our AI education platform
+              Join our AI education platform - Plan selection required
             </CardDescription>
           </div>
           <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse" />
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Selected Plan Badge */}
-        {selectedPlan && (
+        {/* Selected Plan Badge or Warning */}
+        {selectedPlan ? (
           <div className="p-4 bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-sm border-2 border-teal-400/50 rounded-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -124,6 +125,18 @@ export function RegisterForm({ onToggleMode, selectedPlan, onChangePlan }: Regis
                   Change
                 </button>
               )}
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 backdrop-blur-sm border-2 border-red-400/50 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg">
+                <Award className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-white/80 font-medium">Plan Selection Required</p>
+                <p className="text-white font-medium">Please select a plan to create your account</p>
+              </div>
             </div>
           </div>
         )}
@@ -249,13 +262,18 @@ export function RegisterForm({ onToggleMode, selectedPlan, onChangePlan }: Regis
 
           <Button 
             type="submit" 
-            className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-medium hover-lift rounded-xl font-semibold" 
-            disabled={loading}
+            className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-medium hover-lift rounded-xl font-semibold disabled:opacity-50" 
+            disabled={loading || !selectedPlan}
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Creating account...
+              </>
+            ) : !selectedPlan ? (
+              <>
+                <Award className="mr-2 h-5 w-5" />
+                Select a Plan First
               </>
             ) : (
               <>
