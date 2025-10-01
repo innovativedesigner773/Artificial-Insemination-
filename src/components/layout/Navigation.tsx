@@ -57,7 +57,8 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
 
     if (user?.role === 'instructor') {
       return [
-        { id: 'instructor_dashboard', label: 'Instructor', icon: BarChart3, color: 'text-purple-500' },
+        { id: 'instructor_dashboard', label: 'Analytics', icon: BarChart3, color: 'text-purple-500' },
+        { id: 'enrollment', label: 'Enrollment', icon: Users, color: 'text-blue-500' },
         { id: 'courses', label: 'Courses', icon: BookOpen, color: 'text-green-500' },
       ]
     }

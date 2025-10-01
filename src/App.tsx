@@ -4,6 +4,7 @@ import { AuthPage } from './components/auth/AuthPage'
 import { Navigation } from './components/layout/Navigation'
 import { StudentDashboard } from './components/dashboard/StudentDashboard'
 import { InstructorDashboard } from './components/dashboard/InstructorDashboard'
+import { StudentEnrollment } from './components/dashboard/StudentEnrollment'
 import { AdminDashboard } from './components/dashboard/AdminDashboard'
 import { UserManagement } from './components/dashboard/UserManagement'
 import { CourseList } from './components/courses/CourseList'
@@ -229,6 +230,8 @@ function AppContent() {
       switch (currentPage) {
         case 'instructor_dashboard':
           return <InstructorDashboard />
+        case 'enrollment':
+          return <StudentEnrollment />
         case 'courses':
           return (
             <CourseList 
