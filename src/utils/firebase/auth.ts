@@ -22,6 +22,7 @@ const convertFirebaseUser = async (firebaseUser: FirebaseUser): Promise<User> =>
     lastName: userData?.lastName || '',
     role: userData?.role || 'student',
     organization: userData?.organization,
+    selectedPlan: userData?.selectedPlan,
     created_at: userData?.created_at,
     accessExpiresAt: userData?.accessExpiresAt,
     accessDuration: userData?.accessDuration
@@ -44,12 +45,23 @@ export const authHelpers = {
         displayName: `${data.firstName} ${data.lastName}`
       });
 
+      // Determine role based on selected plan
+      // If a plan is selected, user is a paying customer and should be 'admin'
+      // Otherwise, default to 'student' or use provided role
+      let userRole: 'student' | 'instructor' | 'admin' = 'student';
+      if (data.selectedPlan) {
+        userRole = 'admin'; // Paying customers get admin access
+      } else if (data.role) {
+        userRole = data.role; // Use explicitly provided role
+      }
+
       // Create user document in Firestore
       const userData: any = {
         firstName: data.firstName,
         lastName: data.lastName,
         organization: data.organization,
-        role: 'student',
+        role: userRole,
+        selectedPlan: data.selectedPlan,
         created_at: new Date().toISOString()
       };
 

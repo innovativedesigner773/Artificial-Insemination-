@@ -6,6 +6,7 @@ export interface User {
   lastName: string
   role: 'student' | 'instructor' | 'admin'
   organization?: string
+  selectedPlan?: string // The pricing plan selected during registration
   created_at?: string
   accessExpiresAt?: string // ISO date string for when access expires
   accessDuration?: number // Duration in days
@@ -180,6 +181,8 @@ export interface SignUpData {
   organization?: string
   accessExpiresAt?: string
   accessDuration?: number
+  selectedPlan?: string // Plan selected during registration
+  role?: 'student' | 'instructor' | 'admin' // Optional role override
 }
 
 export interface SignInData {

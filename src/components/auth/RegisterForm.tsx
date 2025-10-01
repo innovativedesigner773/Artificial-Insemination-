@@ -16,14 +16,17 @@ import {
   UserPlus, 
   Sparkles, 
   ArrowRight,
-  Award
+  Award,
+  Check
 } from 'lucide-react'
 
 interface RegisterFormProps {
   onToggleMode: () => void
+  selectedPlan?: string | null
+  onChangePlan?: () => void
 }
 
-export function RegisterForm({ onToggleMode }: RegisterFormProps) {
+export function RegisterForm({ onToggleMode, selectedPlan, onChangePlan }: RegisterFormProps) {
   const { register, loading } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
@@ -61,8 +64,14 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
         firstName: formData.firstName,
         lastName: formData.lastName,
         organization: formData.organization,
+        selectedPlan: selectedPlan || undefined, // Pass the selected plan
       })
-      toast.success('Account created successfully!')
+      
+      if (selectedPlan) {
+        toast.success(`Account created successfully! You're registered for the ${selectedPlan} plan.`)
+      } else {
+        toast.success('Account created successfully!')
+      }
     } catch (error) {
       console.error('Registration error:', error)
       toast.error(error instanceof Error ? error.message : 'Registration failed')
@@ -93,6 +102,32 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Selected Plan Badge */}
+        {selectedPlan && (
+          <div className="p-4 bg-gradient-to-r from-teal-500/20 to-blue-500/20 backdrop-blur-sm border-2 border-teal-400/50 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg">
+                  <Check className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/80 font-medium">Selected Plan</p>
+                  <p className="font-bold text-white text-lg">{selectedPlan}</p>
+                </div>
+              </div>
+              {onChangePlan && (
+                <button 
+                  type="button"
+                  onClick={onChangePlan}
+                  className="px-3 py-1.5 text-sm text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/20"
+                >
+                  Change
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-3">
