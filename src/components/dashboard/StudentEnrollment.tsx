@@ -17,17 +17,12 @@ import {
   BookOpen,
   Shield,
   Crown,
-  Star,
   Edit,
   Trash2,
   Search,
-  Filter,
-  MoreHorizontal,
   Sparkles,
   Target,
-  Zap,
   Activity,
-  Flame,
   Brain,
   Calendar
 } from 'lucide-react'
@@ -283,12 +278,6 @@ export function StudentEnrollment() {
     setEditingStudent(null)
   }
 
-  const getCapacityStatus = (plan: Plan) => {
-    const percentage = (plan.currentEnrollments / plan.capacity) * 100
-    if (percentage >= 90) return { status: 'critical', color: 'text-red-600', bg: 'bg-red-50' }
-    if (percentage >= 75) return { status: 'warning', color: 'text-yellow-600', bg: 'bg-yellow-50' }
-    return { status: 'good', color: 'text-green-600', bg: 'bg-green-50' }
-  }
 
   return (
     <div className="space-y-8 animate-fade-in">

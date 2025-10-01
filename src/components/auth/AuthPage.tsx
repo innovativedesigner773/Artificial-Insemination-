@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import heroLocal from '../../assets/WhatsApp Image 2025-10-01 at 13.46.18.jpeg'
+import heroLocal from '../../assets/hero-image.jpg'
 import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
