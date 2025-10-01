@@ -8,7 +8,9 @@ import {
   VolumeX, 
   Maximize, 
   SkipBack, 
-  SkipForward
+  SkipForward,
+  Clock,
+  CheckCircle
 } from 'lucide-react'
 import { api } from '../../services/api'
 import type { Lesson } from '../../types'
@@ -18,9 +20,10 @@ interface VideoPlayerProps {
   courseId: string
   onProgress: (progress: number) => void
   onComplete: () => void
+  selectedLanguage: string
 }
 
-export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoPlayerProps) {
+export function VideoPlayer({ lesson, courseId, onProgress, onComplete, selectedLanguage }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -30,23 +33,63 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showControls, setShowControls] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
-  const languages = [
-    'Afrikaans',
-    'English',
-    'IsiNdebele',
-    'IsiXhosa',
-    'IsiZulu',
-    'Sesotho',
-    'Sepedi',
-    'Setswana',
-    'SiSwati',
-    'Tshivenda',
-    'Xitsonga'
-  ] as const
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
-    const available = languages.find(l => lesson.videoSources && lesson.videoSources[l as keyof typeof lesson.videoSources])
-    return available || 'English'
-  })
+  const [youtubeStarted, setYoutubeStarted] = useState(false)
+
+  // Get translated UI text
+  const getTranslatedText = (key: string, language: string): string => {
+    const uiTranslations: Record<string, Record<string, string>> = {
+      'Start Watching': {
+        'Afrikaans': 'Begin Kyk',
+        'IsiZulu': 'Qala Ukubuka',
+        'IsiXhosa': 'Qala Ukubona',
+        'Sesotho': 'Qala Ho Sheba',
+        'Setswana': 'Simolola Go Lebelela',
+        'SiSwati': 'Qala Kubuka',
+        'IsiNdebele': 'Qala Ukubuka',
+        'Sepedi': 'Simolola Go Lebelela',
+        'Tshivenda': 'Thoma U Vhona',
+        'Xitsonga': 'Hlamula Ku Vona'
+      },
+      'Mark as Complete': {
+        'Afrikaans': 'Merk as Voltooi',
+        'IsiZulu': 'Phawula Njengokuphelile',
+        'IsiXhosa': 'Phawula Njengokugqityiweyo',
+        'Sesotho': 'Tšoaea E le E Fetileng',
+        'Setswana': 'Tshwaetsa E le E Fetileng',
+        'SiSwati': 'Phawula Njengokuphelile',
+        'IsiNdebele': 'Phawula Njengokuphelile',
+        'Sepedi': 'Tshwaetsa E le E Fetileng',
+        'Tshivenda': 'Shimbidza E ri E Fhedzi',
+        'Xitsonga': 'Khomba Eka Ku Fete'
+      },
+      'Video not available': {
+        'Afrikaans': 'Video nie beskikbaar nie',
+        'IsiZulu': 'Ividiyo ayitholakali',
+        'IsiXhosa': 'Ividiyo ayifumaneki',
+        'Sesotho': 'Video ha e fumanahale',
+        'Setswana': 'Video ga e fitlhehale',
+        'SiSwati': 'Vidiyo ayitholakali',
+        'IsiNdebele': 'Ividiyo ayitholakali',
+        'Sepedi': 'Video ga e fitlhehale',
+        'Tshivenda': 'Video a i wanali',
+        'Xitsonga': 'Video a yi kumeki'
+      },
+      'Please contact support if this issue persists.': {
+        'Afrikaans': 'Kontak asseblief ondersteuning as hierdie probleem voortduur.',
+        'IsiZulu': 'Sicela uxhumane nokusekelwa uma lenkinga iqhubeka.',
+        'IsiXhosa': 'Nceda uqhagamshelane nenkxaso ukuba eli ngxaki liqhubeka.',
+        'Sesotho': 'Ka kopo ikopanye le tšehetso haeba bothata bo tsoela pele.',
+        'Setswana': 'Tsweetswee ikgolaganye le thekgo fa bothata jono bo tswelela.',
+        'SiSwati': 'Sicela uxhumane nentfutfuko uma lenkinga iqhubeka.',
+        'IsiNdebele': 'Sicela uxhumane nokusekelwa uma lenkinga iqhubeka.',
+        'Sepedi': 'Tsweetswee ikgolaganye le thekgo ge bothata bjo bo tswelela.',
+        'Tshivenda': 'Ndi khou humbela u vhudzane na tshetshedzo arali mulandu u tshi khou tswela.',
+        'Xitsonga': 'Hi kombela u vuxana na nhlayiso loko xiphiqo xi tswela.'
+      }
+    }
+
+    return uiTranslations[key]?.[language] || key
+  }
   
   const resolveVideoUrl = (): { type: 'file' | 'youtube'; url: string; videoId?: string } | null => {
     const perLang = lesson.videoSources && lesson.videoSources[selectedLanguage as keyof typeof lesson.videoSources]
@@ -101,6 +144,18 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
     }
   }, [source])
 
+  // For YouTube videos, we can't track progress automatically
+  // So we'll provide a manual completion button
+  const handleYouTubeStart = () => {
+    setYoutubeStarted(true)
+    onProgress(10) // Mark as started
+  }
+
+  const handleYouTubeComplete = () => {
+    onProgress(100)
+    onComplete()
+  }
+
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
@@ -119,9 +174,32 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
     }
   }, [])
 
+  // Listen for custom events from parent component
   useEffect(() => {
-    // Track progress
-    if (duration > 0) {
+    const handleStartVideo = () => {
+      if (source?.type === 'youtube') {
+        handleYouTubeStart()
+      }
+    }
+
+    const handleCompleteVideo = () => {
+      if (source?.type === 'youtube') {
+        handleYouTubeComplete()
+      }
+    }
+
+    window.addEventListener('startVideo', handleStartVideo)
+    window.addEventListener('completeVideo', handleCompleteVideo)
+
+    return () => {
+      window.removeEventListener('startVideo', handleStartVideo)
+      window.removeEventListener('completeVideo', handleCompleteVideo)
+    }
+  }, [source])
+
+  useEffect(() => {
+    // Track progress - only for HTML5 video elements, not YouTube embeds
+    if (duration > 0 && source?.type !== 'youtube') {
       const progressPercent = (currentTime / duration) * 100
       onProgress(progressPercent)
       
@@ -130,7 +208,7 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
         updateProgress(Math.floor(currentTime))
       }
     }
-  }, [currentTime, duration, hasStarted])
+  }, [currentTime, duration, hasStarted, source])
 
   const updateProgress = async (timeSpent: number) => {
     try {
@@ -225,14 +303,14 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
   }
 
   return (
-    <Card className="overflow-hidden">
+    <div className="overflow-hidden">
       <div 
         className="relative bg-black group"
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
       >
         {source && source.type === 'youtube' ? (
-          <div className="w-full aspect-video bg-black">
+          <div className="w-full aspect-video bg-black relative">
             <iframe
               className="w-full h-full border-0"
               src={source.url}
@@ -334,18 +412,6 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Language selector */}
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="bg-white/20 text-white border-none rounded px-2 py-1 text-sm"
-              >
-                {languages
-                  .filter(l => (lesson.videoSources && lesson.videoSources[l as keyof typeof lesson.videoSources]) || lesson.videoUrl)
-                  .map(lang => (
-                    <option key={lang} value={lang}>{lang}</option>
-                  ))}
-              </select>
 
               <select
                 value={playbackRate}
@@ -375,29 +441,14 @@ export function VideoPlayer({ lesson, courseId, onProgress, onComplete }: VideoP
         ) : (
           <div className="w-full aspect-video bg-gray-900 flex items-center justify-center text-white">
             <div className="text-center p-8">
-              <p className="text-lg mb-2">Video not available</p>
-              <p className="text-sm text-gray-400">Please contact support if this issue persists.</p>
+              <p className="text-lg mb-2">{getTranslatedText('Video not available', selectedLanguage)}</p>
+              <p className="text-sm text-gray-400">{getTranslatedText('Please contact support if this issue persists.', selectedLanguage)}</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Lesson Info */}
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{lesson.title}</h3>
-        <p className="text-gray-600 text-sm mb-4">
-          Learn about the fundamental concepts and practical applications covered in this lesson.
-        </p>
-        
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Duration: {lesson.duration} minutes
-          </div>
-          <div className="text-sm text-gray-500">
-            Progress: {Math.round((currentTime / duration) * 100) || 0}%
-          </div>
-        </div>
-      </div>
-    </Card>
+      {/* Lesson Info - Now handled by parent component */}
+    </div>
   )
 }
