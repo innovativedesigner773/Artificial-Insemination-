@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getDummyCourses } from '../../utils/dummyData'
 import type { Course } from '../../types'
 import { CourseCard } from './CourseCard'
+import { CourseFaqBot } from './CourseFaqBot'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Badge } from '../ui/badge'
@@ -31,6 +32,7 @@ export function CourseList({ onGetStarted }: CourseListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false)
 
   useEffect(() => {
     loadCourses()
@@ -249,6 +251,12 @@ export function CourseList({ onGetStarted }: CourseListProps) {
           ))}
         </div>
       )}
+
+      {/* Course FAQ Chatbot */}
+      <CourseFaqBot 
+        isOpen={isChatbotOpen} 
+        onToggle={() => setIsChatbotOpen(!isChatbotOpen)} 
+      />
     </div>
   )
 }
