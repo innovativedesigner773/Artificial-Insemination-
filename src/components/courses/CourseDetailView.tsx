@@ -433,7 +433,7 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <CourseFaqBot course={course} />
+              <CourseFaqBot />
             </CardContent>
           </Card>
 

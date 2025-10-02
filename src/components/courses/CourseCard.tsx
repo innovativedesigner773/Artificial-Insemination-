@@ -213,7 +213,7 @@ export function CourseCard({ course, onGetStarted, isEnrolled = false, progress 
 
         {/* FAQ Bot Trigger */}
         <div className="pt-2">
-          <CourseFaqBot course={course} triggerVariant="link" />
+          <CourseFaqBot />
         </div>
       </CardContent>
 

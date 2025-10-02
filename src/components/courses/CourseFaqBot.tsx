@@ -2,21 +2,15 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { 
   Bot, 
   Send, 
   MessageCircle, 
-  BookOpen, 
-  Brain, 
-  Lightbulb, 
-  HelpCircle,
   X,
   Minimize2,
   Maximize2
 } from 'lucide-react'
-import { getDummyCourses } from '../../utils/dummyData'
 import type { Course } from '../../types'
 
 interface Message {
@@ -28,11 +22,16 @@ interface Message {
 }
 
 interface CourseFaqBotProps {
-  isOpen: boolean
-  onToggle: () => void
+  isOpen?: boolean
+  onToggle?: () => void
+  course?: Course
+  triggerVariant?: string
 }
 
-export function CourseFaqBot({ isOpen, onToggle }: CourseFaqBotProps) {
+export function CourseFaqBot({ isOpen = false, onToggle, course, triggerVariant }: CourseFaqBotProps) {
+  // Suppress unused parameter warnings for optional props
+  void course
+  void triggerVariant
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -50,7 +49,9 @@ export function CourseFaqBot({ isOpen, onToggle }: CourseFaqBotProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const courses = getDummyCourses()
+
+  // Default toggle function if none provided
+  const handleToggle = onToggle || (() => {})
 
   useEffect(() => {
     scrollToBottom()
@@ -307,7 +308,7 @@ Could you be more specific about what you'd like to know? I'm here to help expla
   if (!isOpen) {
     return (
       <Button
-        onClick={onToggle}
+        onClick={handleToggle}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-green-600 hover:bg-green-700 shadow-lg z-50"
         size="icon"
       >
@@ -338,7 +339,7 @@ Could you be more specific about what you'd like to know? I'm here to help expla
             <Button
               variant="ghost"
               size="sm"
-              onClick={onToggle}
+              onClick={handleToggle}
               className="text-white hover:bg-green-700"
             >
               <X className="h-4 w-4" />
