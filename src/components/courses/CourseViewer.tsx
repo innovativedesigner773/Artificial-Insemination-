@@ -32,6 +32,8 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
   const [lessonProgress, setLessonProgress] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English')
+  const [useGlobalLanguage, setUseGlobalLanguage] = useState<boolean>(true)
+  const [sectionLanguage, setSectionLanguage] = useState<Record<string, string>>({})
 
   // Official South African languages
   const languages = [
@@ -80,6 +82,22 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
         overallProgress: 0,
         timeSpent: 0
       })
+    }
+  }
+
+  // Language helpers
+  const getSectionLanguage = (sectionId: string): string => {
+    return useGlobalLanguage ? selectedLanguage : (sectionLanguage[sectionId] || selectedLanguage)
+  }
+
+  const setLanguageFor = (sectionId: string, language: string, applyToAll: boolean) => {
+    if (applyToAll) {
+      setUseGlobalLanguage(true)
+      setSelectedLanguage(language)
+      setSectionLanguage({})
+    } else {
+      setUseGlobalLanguage(false)
+      setSectionLanguage(prev => ({ ...prev, [sectionId]: language }))
     }
   }
 
@@ -210,12 +228,37 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
       }
     }
 
-    // Check if we have a translation for this content
+    // Check if we have a translation for this content (exact match)
     if (translations[content] && translations[content][language]) {
       return translations[content][language]
     }
 
-    // Fallback to English if no translation available
+    // Try whitespace-normalized matching against known keys
+    const normalizedContent = content.trim().replace(/\s+/g, ' ')
+    let matchedKey = Object.keys(translations).find((k) => k.trim().replace(/\s+/g, ' ') === normalizedContent)
+    if (matchedKey && translations[matchedKey] && translations[matchedKey][language]) {
+      return translations[matchedKey][language]
+    }
+
+    // Relaxed fuzzy matching for long paragraphs/sections
+    const keys = Object.keys(translations)
+    const pick = (a: string, n = 80) => a.length > n ? a.slice(0, n) : a
+    const nc = normalizedContent
+    for (const k of keys) {
+      const nk = k.trim().replace(/\s+/g, ' ')
+      if (!nk || !nc) continue
+      const prefixC = pick(nc, 80)
+      const prefixK = pick(nk, 80)
+      if (nk.includes(prefixC) || nc.includes(prefixK)) {
+        matchedKey = k
+        break
+      }
+    }
+    if (matchedKey && translations[matchedKey] && translations[matchedKey][language]) {
+      return translations[matchedKey][language]
+    }
+
+    // Fallback to original if no translation available
     return content
   }
 
@@ -725,23 +768,6 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
             
             {/* Progress section */}
             <div className="flex items-center gap-6">
-              {/* Language Selector - More Prominent */}
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 shadow-sm">
-                <Globe className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Language:</span>
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="text-sm font-medium bg-white border border-blue-300 rounded-md px-2 py-1 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                >
-                  {languages.map((lang) => (
-                    <option key={lang.code} value={lang.nativeName}>
-                      {lang.nativeName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-medium text-gray-900">
@@ -784,9 +810,35 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                              {selectedLanguage}
-                            </span>
+                            <div className="flex items-center gap-2 bg-blue-50 px-2 py-1 rounded-md border border-blue-200 shadow-sm">
+                              <Globe className="h-3.5 w-3.5 text-blue-600" />
+                              <select
+                                value={getSectionLanguage('video')}
+                                onChange={(e) => setLanguageFor('video', e.target.value, useGlobalLanguage)}
+                                className="text-xs font-medium bg-white border border-blue-300 rounded px-1.5 py-0.5 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[110px]"
+                              >
+                                {languages.map((lang) => (
+                                  <option key={lang.code} value={lang.nativeName}>
+                                    {lang.nativeName}
+                                  </option>
+                                ))}
+                              </select>
+                              <label className="flex items-center gap-1 text-[11px] text-blue-900 ml-2 select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={useGlobalLanguage}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      // apply current video selection to all
+                                      setLanguageFor('video', getSectionLanguage('video'), true)
+                                    } else {
+                                      setUseGlobalLanguage(false)
+                                    }
+                                  }}
+                                />
+                                Apply to all
+                              </label>
+                            </div>
                             <div className="text-sm text-gray-500">
                               Progress: {Math.round(lessonProgress)}%
                             </div>
@@ -799,7 +851,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                           courseId={courseId}
                           onProgress={handleLessonProgress}
                           onComplete={handleLessonComplete}
-                          selectedLanguage={selectedLanguage}
+                          selectedLanguage={getSectionLanguage('video')}
                         />
                       </div>
                       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
@@ -847,10 +899,13 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                     </div>
 
                     {/* Content Sections */}
-                    {getLocalizedContent(currentLesson.content || '', selectedLanguage)
+                    {(currentLesson.content || '')
                       .split(/\n\s*\n/)
                       .filter(Boolean)
-                      .map((chunk, idx) => (
+                      .map((chunk, idx) => {
+                        const sectionId = `content-${idx}`
+                        const lang = getSectionLanguage(sectionId)
+                        return (
                         <div key={`content-${idx}`} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                           <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                             <div className="flex items-center gap-3">
@@ -858,19 +913,44 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                                 <BookOpen className="h-4 w-4 text-gray-600" />
                               </div>
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-900">{getTranslatedText('Key Concepts', selectedLanguage)}</h3>
-                                <p className="text-gray-600 text-sm">{getTranslatedText('Important information to understand', selectedLanguage)}</p>
+                                <h3 className="text-lg font-semibold text-gray-900">{getTranslatedText('Key Concepts', lang)}</h3>
+                                <p className="text-gray-600 text-sm">{getTranslatedText('Important information to understand', lang)}</p>
                               </div>
                               <div className="ml-auto">
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                  {selectedLanguage}
-                                </span>
+                                <div className="flex items-center gap-2 bg-blue-50 px-2 py-1 rounded-md border border-blue-200 shadow-sm">
+                                  <Globe className="h-3.5 w-3.5 text-blue-600" />
+                                  <select
+                                    value={lang}
+                                    onChange={(e) => setLanguageFor(sectionId, e.target.value, useGlobalLanguage)}
+                                    className="text-xs font-medium bg-white border border-blue-300 rounded px-1.5 py-0.5 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[110px]"
+                                  >
+                                    {languages.map((lang) => (
+                                      <option key={lang.code} value={lang.nativeName}>
+                                        {lang.nativeName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <label className="flex items-center gap-1 text-[11px] text-blue-900 ml-2 select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={useGlobalLanguage}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setLanguageFor(sectionId, getSectionLanguage(sectionId), true)
+                                        } else {
+                                          setUseGlobalLanguage(false)
+                                        }
+                                      }}
+                                    />
+                                    Apply to all
+                                  </label>
+                                </div>
                               </div>
                             </div>
                           </div>
                           <div className="p-6">
                             <div className="prose prose-lg max-w-none">
-                              {chunk.split('\n').map((line, lineIdx) => {
+                              {getLocalizedContent(chunk, lang).split(/\n/).map((line, lineIdx) => {
                                 if (line.trim().startsWith('# ')) {
                                   return (
                                     <h1 key={lineIdx} className="text-2xl font-bold text-gray-900 mb-4 mt-6 first:mt-0">
@@ -902,7 +982,8 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                   </div>
                 )}
 
