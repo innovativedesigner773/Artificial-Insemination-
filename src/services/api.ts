@@ -71,6 +71,11 @@ class ApiService {
     return firestoreService.getCourses()
   }
 
+  // Debug method to get all courses
+  async getAllCourses(): Promise<Course[]> {
+    return firestoreService.getAllCourses()
+  }
+
   async enrollInCourse(courseId: string): Promise<{ message: string }> {
     const userId = await this.getCurrentUserId()
     return firestoreService.enrollInCourse(userId, courseId)

@@ -5,6 +5,7 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Skeleton } from '../ui/skeleton'
 import { toast } from 'sonner'
+import { FirebaseDebugger } from '../debug/FirebaseDebugger'
 import { 
   Users, 
   BookOpen, 
@@ -485,6 +486,11 @@ export function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Firebase Debugger - Remove this after debugging */}
+      <div className="mt-8">
+        <FirebaseDebugger />
+      </div>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { toast } from 'sonner'
 import { firestoreService, convertFileToBase64 } from '../../utils/firebase/database'
 import { useAuth } from '../../hooks/useAuth'
+import type { Course } from '../../types'
 import { QuizCreator } from '../quiz/QuizCreator'
 import { 
   ArrowLeft,
@@ -110,9 +111,11 @@ interface UploadedFile {
 interface CourseCreatorProps {
   onBack: () => void
   onCourseCreated?: (courseId: string) => void
+  editingCourse?: Course | null
+  onCourseUpdated?: (courseId: string) => void
 }
 
-export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
+export function CourseCreator({ onBack, onCourseCreated, editingCourse, onCourseUpdated }: CourseCreatorProps) {
   const [formData, setFormData] = useState<CourseFormData>({
     title: '',
     description: '',
@@ -157,6 +160,80 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
   const { user } = useAuth()
   
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Load existing course data when editing
+  useEffect(() => {
+    if (editingCourse) {
+      setFormData({
+        title: editingCourse.title,
+        description: editingCourse.description,
+        shortDescription: '', // Course type doesn't have shortDescription
+        difficulty: editingCourse.difficulty,
+        duration: editingCourse.duration * 60, // Convert hours to minutes
+        category: editingCourse.category,
+        tags: [], // Course type doesn't have tags
+        thumbnail: editingCourse.thumbnail,
+        isPublished: editingCourse.published,
+        modules: editingCourse.modules.map(module => ({
+          id: module.id,
+          title: module.title,
+          description: module.description || '',
+          lessons: module.lessons.map(lesson => ({
+            id: lesson.id,
+            title: lesson.title,
+            type: lesson.type,
+            duration: lesson.duration,
+            content: lesson.content || '',
+            videoUrl: lesson.videoUrl,
+            videoSources: lesson.videoSources,
+            attachments: (lesson.attachments || []).map(file => ({
+              id: file.id,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              data: file.data || '',
+              url: file.url
+            })),
+            quizId: lesson.quizId,
+            contentBlocks: lesson.contentBlocks?.map(block => ({
+              id: block.id,
+              type: block.type,
+              title: block.title,
+              content: block.content,
+              videoUrl: block.videoUrl,
+              quizId: block.quizId,
+              attachments: (block.attachments || []).map(file => ({
+                id: file.id,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                data: file.data || '',
+                url: file.url
+              })),
+              order: block.order,
+              duration: block.duration
+            }))
+          })),
+          attachments: (module.attachments || []).map(file => ({
+            id: file.id,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: file.data || '',
+            url: file.url
+          }))
+        })),
+        attachments: (editingCourse.attachments || []).map(file => ({
+          id: file.id,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          data: file.data || '',
+          url: file.url
+        }))
+      })
+    }
+  }, [editingCourse])
   const moduleFileInputRef = useRef<HTMLInputElement>(null)
   const lessonFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -586,14 +663,105 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
         instructorId: user?.id || 'anonymous'
       }
       
-      const createdCourse = await firestoreService.createCourse(courseData)
+      let courseId: string
       
-      toast.success('Course created successfully! Note: File attachments are stored as metadata only.')
-      
-      if (onCourseCreated) {
-        onCourseCreated(createdCourse.id)
+      if (editingCourse) {
+        // Update existing course
+        const updatedCourse = await firestoreService.updateCourse(editingCourse.id, courseData)
+        courseId = updatedCourse.id
+        
+        // Get existing course content to determine what's new
+        const existingContent = await firestoreService.getCourseContentByCourseId(editingCourse.id)
+        const existingLessonIds = existingContent.map(content => content.lessonId)
+        
+        // Only save new lessons that don't already exist
+        const newCourseContents = []
+        
+        for (const module of formData.modules) {
+          for (const lesson of module.lessons) {
+            if (!existingLessonIds.includes(lesson.id)) {
+              const courseContent = {
+                courseId: courseId,
+                moduleId: module.id,
+                lessonId: lesson.id,
+                title: lesson.title,
+                type: lesson.type,
+                duration: lesson.duration,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl,
+                videoSources: lesson.videoSources,
+                attachments: lesson.attachments.map(file => ({
+                  id: file.id,
+                  name: file.name,
+                  size: file.size,
+                  type: file.type,
+                })),
+                quizId: lesson.quizId,
+                contentBlocks: lesson.contentBlocks
+              }
+              newCourseContents.push(courseContent)
+            }
+          }
+        }
+        
+        // Batch create new course content
+        if (newCourseContents.length > 0) {
+          await firestoreService.batchCreateCourseContent(newCourseContents)
+        }
+        
+        toast.success('Course updated successfully!')
+        
+        if (onCourseUpdated) {
+          onCourseUpdated(courseId)
+        } else {
+          onBack()
+        }
       } else {
-        onBack()
+        // Create new course
+        const createdCourse = await firestoreService.createCourse(courseData)
+        courseId = createdCourse.id
+        
+        // Save all lessons to the courseContent collection with course linkage
+        const courseContents = []
+        
+        for (const module of formData.modules) {
+          for (const lesson of module.lessons) {
+            const courseContent = {
+              courseId: courseId,
+              moduleId: module.id,
+              lessonId: lesson.id,
+              title: lesson.title,
+              type: lesson.type,
+              duration: lesson.duration,
+              content: lesson.content,
+              videoUrl: lesson.videoUrl,
+              videoSources: lesson.videoSources,
+              attachments: lesson.attachments.map(file => ({
+                id: file.id,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                // Don't include the base64 data in the course content document
+              })),
+              quizId: lesson.quizId,
+              contentBlocks: lesson.contentBlocks
+            }
+            courseContents.push(courseContent)
+          }
+        }
+        
+        // Batch create all course content
+        if (courseContents.length > 0) {
+          await firestoreService.batchCreateCourseContent(courseContents)
+        }
+        
+        toast.success('Course and lessons created successfully!')
+        
+        if (onCourseCreated) {
+          onCourseCreated(courseId)
+        } else {
+          onBack()
+        }
       }
     } catch (error) {
       console.error('Error creating course:', error)
@@ -617,9 +785,11 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <Microscope className="h-8 w-8 text-green-600" />
-              Create AI Course
+              {editingCourse ? 'Edit AI Course' : 'Create AI Course'}
             </h1>
-            <p className="text-gray-600">Design and publish your artificial insemination course content</p>
+            <p className="text-gray-600">
+              {editingCourse ? 'Update and add more content to your artificial insemination course' : 'Design and publish your artificial insemination course content'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1183,12 +1353,12 @@ export function CourseCreator({ onBack, onCourseCreated }: CourseCreatorProps) {
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Creating...
+                {editingCourse ? 'Updating...' : 'Creating...'}
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Create AI Course
+                {editingCourse ? 'Update AI Course' : 'Create AI Course'}
               </>
             )}
           </Button>

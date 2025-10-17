@@ -123,6 +123,13 @@ export interface Question {
   difficulty?: 'easy' | 'medium' | 'hard'
   tags?: string[]
   quizId: string // Reference to the quiz this question belongs to
+  createdAt?: string // When the question was created
+  updatedAt?: string // When the question was last updated
+  isActive?: boolean // Whether the question is active (for soft deletion)
+  order?: number // Order of the question within the quiz
+  timeLimit?: number // Time limit for this specific question in seconds
+  hint?: string // Optional hint for the question
+  feedback?: string // Feedback shown after answering
 }
 
 export interface QuestionOption {
@@ -188,4 +195,36 @@ export interface SignUpData {
 export interface SignInData {
   email: string
   password: string
+}
+
+// Course Content Types
+export interface CourseContent {
+  id: string
+  courseId: string
+  moduleId: string
+  lessonId: string
+  title: string
+  type: 'video' | 'interactive' | 'quiz' | 'text' | 'document' | 'presentation' | 'mixed'
+  duration: number // minutes
+  content?: string
+  videoUrl?: string
+  videoSources?: Partial<Record<
+    | 'Afrikaans'
+    | 'English'
+    | 'IsiNdebele'
+    | 'IsiXhosa'
+    | 'IsiZulu'
+    | 'Sesotho'
+    | 'Sepedi'
+    | 'Setswana'
+    | 'SiSwati'
+    | 'Tshivenda'
+    | 'Xitsonga',
+    string
+  >>
+  attachments?: UploadedFile[]
+  quizId?: string
+  contentBlocks?: ContentBlock[]
+  createdAt: string
+  updatedAt: string
 }

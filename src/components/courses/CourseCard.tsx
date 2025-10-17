@@ -19,7 +19,8 @@ import {
   Eye,
   ArrowRight,
   FileText,
-  Download
+  Download,
+  Edit
 } from 'lucide-react'
 import type { Course } from '../../types'
 import { CourseFaqBot } from './CourseFaqBot'
@@ -29,9 +30,11 @@ interface CourseCardProps {
   onGetStarted: (courseId: string) => void
   isEnrolled?: boolean
   progress?: number
+  onEditCourse?: (course: Course) => void
+  showEditButton?: boolean
 }
 
-export function CourseCard({ course, onGetStarted, isEnrolled = false, progress = 0 }: CourseCardProps) {
+export function CourseCard({ course, onGetStarted, isEnrolled = false, progress = 0, onEditCourse, showEditButton = false }: CourseCardProps) {
   const [loading, setLoading] = useState(false)
 
   const handleGetStarted = () => {
@@ -67,11 +70,27 @@ export function CourseCard({ course, onGetStarted, isEnrolled = false, progress 
               {course.difficulty.charAt(0).toUpperCase() + course.difficulty.slice(1)}
             </Badge>
           </div>
-          <div className="absolute top-4 right-4">
+          <div className="absolute top-4 right-4 flex gap-2">
             <Badge className="bg-white/95 text-gray-700 border-0 shadow-soft font-semibold">
               <Star className="h-3 w-3 mr-1 text-yellow-500" />
               {course.category}
             </Badge>
+            {!course.published && (
+              <Badge className="bg-orange-100 text-orange-700 border-0 shadow-soft font-semibold">
+                Draft
+              </Badge>
+            )}
+            {showEditButton && onEditCourse && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white/95 hover:bg-white border-0 shadow-soft h-8 w-8 p-0"
+                onClick={() => onEditCourse(course)}
+                title="Edit Course"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button size="sm" className="w-full bg-white/90 text-gray-900 hover:bg-white shadow-medium">

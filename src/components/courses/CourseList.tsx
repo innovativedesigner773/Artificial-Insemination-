@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
-import { getDummyCourses } from '../../utils/dummyData'
 import type { Course } from '../../types'
 import { CourseCard } from './CourseCard'
 import { CourseFaqBot } from './CourseFaqBot'
+import { useAuth } from '../../hooks/useAuth'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
+import { Switch } from '../ui/switch'
+import { Label } from '../ui/label'
 import { toast } from 'sonner'
+import { api } from '../../services/api'
 import { 
   Search, 
   Filter, 
@@ -18,21 +21,29 @@ import {
   Zap, 
   Star, 
   Award,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Eye,
+  EyeOff,
+  FileText
 } from 'lucide-react'
 
 interface CourseListProps {
   onGetStarted?: (courseId: string) => void
+  onEditCourse?: (course: Course) => void
 }
 
-export function CourseList({ onGetStarted }: CourseListProps) {
+export function CourseList({ onGetStarted, onEditCourse }: CourseListProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [showDrafts, setShowDrafts] = useState(false)
   const [isChatbotOpen, setIsChatbotOpen] = useState(false)
+  
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     loadCourses()
@@ -40,13 +51,19 @@ export function CourseList({ onGetStarted }: CourseListProps) {
 
   useEffect(() => {
     filterCourses()
-  }, [courses, searchTerm, selectedDifficulty, selectedCategory])
+  }, [courses, searchTerm, selectedDifficulty, selectedCategory, showDrafts])
 
   const loadCourses = async () => {
     try {
-      // Use local dummy data to simulate Firestore courses for demo
-      const coursesData = getDummyCourses()
+      // For admins, load all courses (including unpublished)
+      // For regular users, load only published courses
+      const coursesData = isAdmin ? await api.getAllCourses() : await api.getCourses()
       setCourses(coursesData)
+      
+      if (isAdmin) {
+        console.log('Admin view: Loaded all courses including unpublished ones')
+        console.log('Total courses loaded:', coursesData.length)
+      }
     } catch (error) {
       console.error('Failed to load courses:', error)
       toast.error('Failed to load courses')
@@ -74,6 +91,15 @@ export function CourseList({ onGetStarted }: CourseListProps) {
     // Filter by category
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(course => course.category === selectedCategory)
+    }
+
+    // Filter by draft/published status (only for admins)
+    if (isAdmin) {
+      if (showDrafts) {
+        filtered = filtered.filter(course => !course.published)
+      } else {
+        filtered = filtered.filter(course => course.published)
+      }
     }
 
     setFilteredCourses(filtered)
@@ -197,6 +223,44 @@ export function CourseList({ onGetStarted }: CourseListProps) {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Draft/Published Toggle - Only for Admins */}
+        {isAdmin && (
+          <div className="mt-4 pt-4 border-t border-green-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-green-600" />
+                <Label htmlFor="draft-toggle" className="font-medium text-gray-700">
+                  Show Drafts
+                </Label>
+                <Switch
+                  id="draft-toggle"
+                  checked={showDrafts}
+                  onCheckedChange={setShowDrafts}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                {showDrafts ? (
+                  <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    Draft Mode
+                  </Badge>
+                ) : (
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                    <Eye className="h-3 w-3 mr-1" />
+                    Published Mode
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {showDrafts 
+                ? "Showing only draft courses that are not yet published" 
+                : "Showing only published courses visible to students"
+              }
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Results Info */}
@@ -206,9 +270,14 @@ export function CourseList({ onGetStarted }: CourseListProps) {
           <span className="text-gray-600">
             {filteredCourses.length} of {courses.length} courses
           </span>
+          {isAdmin && (
+            <Badge className={showDrafts ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}>
+              {showDrafts ? "Draft View" : "Published View"}
+            </Badge>
+          )}
         </div>
         
-        {(searchTerm || selectedDifficulty !== 'all' || selectedCategory !== 'all') && (
+        {(searchTerm || selectedDifficulty !== 'all' || selectedCategory !== 'all' || (isAdmin && showDrafts)) && (
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-500">Filters active:</span>
@@ -225,6 +294,11 @@ export function CourseList({ onGetStarted }: CourseListProps) {
             {selectedCategory !== 'all' && (
               <Badge variant="secondary" onClick={() => setSelectedCategory('all')} className="cursor-pointer">
                 {selectedCategory} ×
+              </Badge>
+            )}
+            {isAdmin && showDrafts && (
+              <Badge variant="secondary" onClick={() => setShowDrafts(false)} className="cursor-pointer">
+                Drafts ×
               </Badge>
             )}
           </div>
@@ -247,6 +321,8 @@ export function CourseList({ onGetStarted }: CourseListProps) {
               key={course.id} 
               course={course} 
               onGetStarted={handleGetStarted}
+              onEditCourse={onEditCourse}
+              showEditButton={isAdmin}
             />
           ))}
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import type { Course } from './types'
 import { AuthPage } from './components/auth/AuthPage'
 import { Navigation } from './components/layout/Navigation'
 import { StudentDashboard } from './components/dashboard/StudentDashboard'
@@ -25,6 +26,7 @@ function AppContent() {
   const [showCourseCreator, setShowCourseCreator] = useState(false)
   const [showCourseDetail, setShowCourseDetail] = useState(false)
   const [courseDetailId, setCourseDetailId] = useState<string | null>(null)
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
 
   // Set initial page based on user role when user changes
   React.useEffect(() => {
@@ -79,10 +81,20 @@ function AppContent() {
   if (showCourseCreator) {
     return (
       <CourseCreator
-        onBack={() => setShowCourseCreator(false)}
+        onBack={() => {
+          setShowCourseCreator(false)
+          setEditingCourse(null)
+        }}
         onCourseCreated={(courseId) => {
           setShowCourseCreator(false)
+          setEditingCourse(null)
           setSelectedCourseId(courseId)
+        }}
+        editingCourse={editingCourse}
+        onCourseUpdated={(courseId) => {
+          setShowCourseCreator(false)
+          setEditingCourse(null)
+          toast.success('Course updated successfully!')
         }}
       />
     )
@@ -162,6 +174,10 @@ function AppContent() {
                 onGetStarted={(courseId: string) => {
                   setCourseDetailId(courseId)
                   setShowCourseDetail(true)
+                }}
+                onEditCourse={(course: Course) => {
+                  setEditingCourse(course)
+                  setShowCourseCreator(true)
                 }}
               />
             </div>

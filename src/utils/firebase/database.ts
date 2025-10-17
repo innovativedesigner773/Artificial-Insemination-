@@ -9,7 +9,8 @@ import {
   query, 
   where, 
   orderBy,
-  serverTimestamp 
+  serverTimestamp,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from './config';
 import type { 
@@ -20,7 +21,8 @@ import type {
   Question,
   QuizResult, 
   DashboardData,
-  Enrollment
+  Enrollment,
+  CourseContent
 } from '../../types';
 
 class FirestoreService {
@@ -63,6 +65,21 @@ class FirestoreService {
     const coursesSnapshot = await getDocs(
       query(collection(db, 'courses'), where('published', '==', true))
     );
+    return coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+  }
+
+  // Debug method to get all courses regardless of published status
+  async getAllCourses(): Promise<Course[]> {
+    const coursesSnapshot = await getDocs(collection(db, 'courses'));
+    console.log('Total courses found:', coursesSnapshot.docs.length);
+    coursesSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      console.log(`Course: ${doc.id}`, {
+        title: data.title,
+        published: data.published,
+        hasPublishedField: 'published' in data
+      });
+    });
     return coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
   }
 
@@ -226,6 +243,10 @@ class FirestoreService {
     imageUrl?: string | null
     difficulty?: 'easy' | 'medium' | 'hard'
     tags?: string[]
+    order?: number
+    timeLimit?: number
+    hint?: string
+    feedback?: string
   }): Promise<Question> {
     // Filter out undefined values and add quizId reference
     const cleanQuestionData = Object.fromEntries(
@@ -248,10 +269,17 @@ class FirestoreService {
       correctAnswerIndex: questionData.correctAnswerIndex,
       points: questionData.points,
       quizId: quizId,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.imageUrl !== undefined && { imageUrl: questionData.imageUrl }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty }),
-      ...(questionData.tags && { tags: questionData.tags })
+      ...(questionData.tags && { tags: questionData.tags }),
+      ...(questionData.order && { order: questionData.order }),
+      ...(questionData.timeLimit && { timeLimit: questionData.timeLimit }),
+      ...(questionData.hint && { hint: questionData.hint }),
+      ...(questionData.feedback && { feedback: questionData.feedback })
     } as Question;
   }
 
@@ -260,7 +288,23 @@ class FirestoreService {
       query(
         collection(db, 'questions'), 
         where('quizId', '==', quizId),
-        orderBy('createdAt', 'asc')
+        where('isActive', '==', true),
+        orderBy('order', 'asc')
+      )
+    );
+    
+    return questionsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Question[];
+  }
+
+  async getAllQuestions(quizId: string): Promise<Question[]> {
+    const questionsSnapshot = await getDocs(
+      query(
+        collection(db, 'questions'), 
+        where('quizId', '==', quizId),
+        orderBy('order', 'asc')
       )
     );
     
@@ -289,7 +333,11 @@ class FirestoreService {
     const questionData = questionDoc.data();
     const quizId = questionData.quizId;
     
-    await updateDoc(questionRef, { deleted: true });
+    // Soft delete by setting isActive to false
+    await updateDoc(questionRef, { 
+      isActive: false,
+      updatedAt: serverTimestamp()
+    });
     
     // Update quiz totalQuestions count
     const quiz = await this.getQuiz(quizId);
@@ -329,6 +377,59 @@ class FirestoreService {
     await addDoc(collection(db, 'quizResults'), result);
     
     return result;
+  }
+
+  // Enhanced quiz validation with detailed results
+  async validateQuizAnswers(quizId: string, answers: Record<string, number>): Promise<{
+    score: number
+    totalQuestions: number
+    percentage: number
+    passed: boolean
+    detailedResults: Array<{
+      questionId: string
+      questionText: string
+      userAnswer: number
+      correctAnswer: number
+      isCorrect: boolean
+      explanation?: string
+      points: number
+      earnedPoints: number
+    }>
+  }> {
+    const questions = await this.getQuestions(quizId);
+    
+    let totalScore = 0;
+    let earnedPoints = 0;
+    const detailedResults = questions.map(question => {
+      const userAnswer = answers[question.id] ?? -1;
+      const isCorrect = userAnswer === question.correctAnswerIndex;
+      const pointsEarned = isCorrect ? question.points : 0;
+      
+      totalScore += question.points;
+      earnedPoints += pointsEarned;
+      
+      return {
+        questionId: question.id,
+        questionText: question.text,
+        userAnswer,
+        correctAnswer: question.correctAnswerIndex,
+        isCorrect,
+        explanation: question.explanation,
+        points: question.points,
+        earnedPoints: pointsEarned
+      };
+    });
+    
+    const percentage = totalScore > 0 ? (earnedPoints / totalScore) * 100 : 0;
+    const passed = percentage >= 70;
+    
+    return {
+      score: earnedPoints,
+      totalQuestions: questions.length,
+      percentage,
+      passed,
+      detailedResults
+    };
   }
 
   // Dashboard Methods
@@ -399,6 +500,99 @@ class FirestoreService {
     );
     
     return !enrollmentSnapshot.empty;
+  }
+
+  // Course Content Methods
+  async createCourseContent(contentData: Omit<CourseContent, 'id' | 'createdAt' | 'updatedAt'>): Promise<CourseContent> {
+    const contentRef = await addDoc(collection(db, 'courseContent'), {
+      ...contentData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      id: contentRef.id,
+      ...contentData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async getCourseContentByCourseId(courseId: string): Promise<CourseContent[]> {
+    const contentSnapshot = await getDocs(
+      query(
+        collection(db, 'courseContent'),
+        where('courseId', '==', courseId),
+        orderBy('createdAt', 'asc')
+      )
+    );
+    
+    return contentSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as CourseContent[];
+  }
+
+  async getCourseContentByModuleId(courseId: string, moduleId: string): Promise<CourseContent[]> {
+    const contentSnapshot = await getDocs(
+      query(
+        collection(db, 'courseContent'),
+        where('courseId', '==', courseId),
+        where('moduleId', '==', moduleId),
+        orderBy('createdAt', 'asc')
+      )
+    );
+    
+    return contentSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as CourseContent[];
+  }
+
+  async getCourseContent(contentId: string): Promise<CourseContent> {
+    const contentDoc = await getDoc(doc(db, 'courseContent', contentId));
+    if (!contentDoc.exists()) {
+      throw new Error('Course content not found');
+    }
+    return { id: contentId, ...contentDoc.data() } as CourseContent;
+  }
+
+  async updateCourseContent(contentId: string, updates: Partial<CourseContent>): Promise<CourseContent> {
+    const contentRef = doc(db, 'courseContent', contentId);
+    await updateDoc(contentRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+    return this.getCourseContent(contentId);
+  }
+
+  async deleteCourseContent(contentId: string): Promise<void> {
+    const contentRef = doc(db, 'courseContent', contentId);
+    await updateDoc(contentRef, { deleted: true });
+  }
+
+  async batchCreateCourseContent(contents: Omit<CourseContent, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<CourseContent[]> {
+    const batch = writeBatch(db);
+    const createdContents: CourseContent[] = [];
+    
+    for (const content of contents) {
+      const contentRef = doc(collection(db, 'courseContent'));
+      batch.set(contentRef, {
+        ...content,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      
+      createdContents.push({
+        id: contentRef.id,
+        ...content,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    
+    await batch.commit();
+    return createdContents;
   }
 }
 
