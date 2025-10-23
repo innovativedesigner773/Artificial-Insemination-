@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { api } from '../../services/api'
 import { firestoreService } from '../../utils/firebase/database'
 import { toast } from 'sonner'
 import { Database, Eye, AlertCircle, CheckCircle } from 'lucide-react'
@@ -54,7 +53,7 @@ export function FirebaseDebugger() {
       
     } catch (error) {
       console.error('❌ Debug failed:', error)
-      toast.error('Debug failed: ' + error.message)
+      toast.error('Debug failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }

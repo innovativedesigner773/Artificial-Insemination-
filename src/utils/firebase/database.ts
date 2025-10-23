@@ -88,7 +88,121 @@ class FirestoreService {
     if (!courseDoc.exists()) {
       throw new Error('Course not found');
     }
-    return { id: courseId, ...courseDoc.data() } as Course;
+    
+    const courseData = courseDoc.data();
+    
+    console.log('Raw course data from database:', courseData);
+    console.log('Has lessons:', !!courseData.lessons, 'Count:', courseData.lessons?.length);
+    console.log('Has modules:', !!courseData.modules, 'Count:', courseData.modules?.length);
+    
+    // Transform the data structure to match the expected Course interface
+    // Handle different database structures
+    if (courseData.lessons && courseData.modules) {
+      // Database has both lessons and modules, but modules might have empty lessons arrays
+      // Distribute lessons to modules or create a default module
+      const modules = courseData.modules.map((module: any) => ({
+        ...module,
+        lessons: module.lessons || []
+      }));
+      
+      // If all modules have empty lessons, put all lessons in the first module
+      const hasLessonsInModules = modules.some((module: any) => module.lessons.length > 0);
+      console.log('Has lessons in modules:', hasLessonsInModules);
+      console.log('Lessons count:', courseData.lessons.length);
+      
+      if (!hasLessonsInModules && courseData.lessons.length > 0) {
+        console.log('Distributing lessons to first module');
+        modules[0] = {
+          ...modules[0],
+          lessons: courseData.lessons
+        };
+      }
+      
+      console.log('Final modules after transformation:', modules);
+      
+      return {
+        id: courseId,
+        ...courseData,
+        modules
+      } as Course;
+    } else if (courseData.modules && !courseData.lessons) {
+      // Database has modules but no separate lessons array
+      // Check if modules have lessons or if we need to create some
+      const modules = courseData.modules.map((module: any) => ({
+        ...module,
+        lessons: module.lessons || []
+      }));
+      
+      console.log('Modules with lessons:', modules.map((m: any) => ({ id: m.id, title: m.title, lessonCount: m.lessons.length })));
+      
+      // Check if any modules have lessons
+      const hasAnyLessons = modules.some((module: any) => module.lessons.length > 0);
+      console.log('Has any lessons in modules:', hasAnyLessons);
+      
+      if (!hasAnyLessons) {
+        console.log('No lessons found in any module - creating sample lesson');
+        // Create a sample lesson for the first module
+        modules[0] = {
+          ...modules[0],
+          lessons: [{
+            id: 'sample-lesson-1',
+            title: 'Welcome to the Course',
+            duration: 5,
+            type: 'text',
+            content: 'Welcome! This course will guide you through the learning material. Click "Next" to continue.',
+            attachments: []
+          }]
+        };
+      } else {
+        // If lessons exist but not in the first module, move them to the first module
+        // or ensure the first module has at least one lesson
+        const firstModuleHasLessons = modules[0].lessons.length > 0;
+        if (!firstModuleHasLessons) {
+          console.log('First module has no lessons, but other modules do - moving lessons to first module');
+          // Find the first module with lessons and move them to the first module
+          const moduleWithLessons = modules.find((module: any) => module.lessons.length > 0);
+          if (moduleWithLessons) {
+            modules[0] = {
+              ...modules[0],
+              lessons: moduleWithLessons.lessons
+            };
+            console.log('Moved lessons to first module:', modules[0].lessons.length);
+          }
+        }
+      }
+      
+      return {
+        id: courseId,
+        ...courseData,
+        modules
+      } as Course;
+    } else if (courseData.lessons && !courseData.modules) {
+      // Create a default module containing all lessons
+      const transformedData: Course = {
+        id: courseId,
+        title: courseData.title || 'Untitled Course',
+        description: courseData.description || '',
+        difficulty: courseData.difficulty || 'beginner',
+        duration: courseData.duration || 0,
+        thumbnail: courseData.thumbnail || '',
+        published: courseData.published || false,
+        category: courseData.category || '',
+        attachments: courseData.attachments || [],
+        createdAt: courseData.createdAt || new Date().toISOString(),
+        updatedAt: courseData.updatedAt || new Date().toISOString(),
+        instructorId: courseData.instructorId || '',
+        modules: [{
+          id: 'default-module',
+          title: 'Course Content',
+          description: 'All course lessons',
+          lessons: courseData.lessons || [],
+          attachments: []
+        }]
+      };
+      return transformedData;
+    }
+    
+    return { id: courseId, ...courseData } as Course;
   }
 
   async createCourse(courseData: Omit<Course, 'id'>): Promise<Course> {
@@ -593,6 +707,201 @@ class FirestoreService {
     
     await batch.commit();
     return createdContents;
+  }
+
+  // Module Management Methods
+  async createModule(courseId: string, moduleData: any): Promise<any> {
+    const courseRef = doc(db, 'courses', courseId);
+    const moduleId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    // For now, we'll store modules as part of the course document
+    // In a real implementation, you might want separate module documents
+    const courseDoc = await getDoc(courseRef);
+    if (!courseDoc.exists()) {
+      throw new Error('Course not found');
+    }
+    
+    const courseData = courseDoc.data();
+    const modules = courseData.modules || [];
+    const newModule = {
+      id: moduleId,
+      ...moduleData,
+      lessons: moduleData.lessons || []
+    };
+    
+    await updateDoc(courseRef, {
+      modules: this.cleanUndefinedValues([...modules, newModule]),
+      updatedAt: serverTimestamp()
+    });
+    
+    return newModule;
+  }
+
+  async updateModule(courseId: string, moduleId: string, moduleData: any): Promise<any> {
+    const courseRef = doc(db, 'courses', courseId);
+    const courseDoc = await getDoc(courseRef);
+    if (!courseDoc.exists()) {
+      throw new Error('Course not found');
+    }
+    
+    const courseData = courseDoc.data();
+    const modules = courseData.modules || [];
+    const updatedModules = modules.map((module: any) => 
+      module.id === moduleId ? { ...module, ...moduleData } : module
+    );
+    
+    await updateDoc(courseRef, {
+      modules: this.cleanUndefinedValues(updatedModules),
+      updatedAt: serverTimestamp()
+    });
+    
+    return { id: moduleId, ...moduleData };
+  }
+
+  async deleteModule(courseId: string, moduleId: string): Promise<void> {
+    const courseRef = doc(db, 'courses', courseId);
+    const courseDoc = await getDoc(courseRef);
+    if (!courseDoc.exists()) {
+      throw new Error('Course not found');
+    }
+    
+    const courseData = courseDoc.data();
+    const modules = courseData.modules || [];
+    const updatedModules = modules.filter((module: any) => module.id !== moduleId);
+    
+    await updateDoc(courseRef, {
+      modules: this.cleanUndefinedValues(updatedModules),
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  // Lesson Management Methods
+  async createLesson(courseId: string, moduleId: string, lessonData: any): Promise<any> {
+    const courseRef = doc(db, 'courses', courseId);
+    const courseDoc = await getDoc(courseRef);
+    if (!courseDoc.exists()) {
+      throw new Error('Course not found');
+    }
+    
+    const courseData = courseDoc.data();
+    const modules = courseData.modules || [];
+    const updatedModules = modules.map((module: any) => {
+      if (module.id === moduleId) {
+        return {
+          ...module,
+          lessons: [...(module.lessons || []), lessonData]
+        };
+      }
+      return module;
+    });
+    
+    await updateDoc(courseRef, {
+      modules: this.cleanUndefinedValues(updatedModules),
+      updatedAt: serverTimestamp()
+    });
+    
+    return lessonData;
+  }
+
+  async updateLesson(courseId: string, moduleId: string, lessonId: string, lessonData: any): Promise<any> {
+    const courseRef = doc(db, 'courses', courseId);
+    const courseDoc = await getDoc(courseRef);
+    if (!courseDoc.exists()) {
+      throw new Error('Course not found');
+    }
+    
+    const courseData = courseDoc.data();
+    const modules = courseData.modules || [];
+    const updatedModules = modules.map((module: any) => {
+      if (module.id === moduleId) {
+        return {
+          ...module,
+          lessons: module.lessons.map((lesson: any) => 
+            lesson.id === lessonId ? { ...lesson, ...lessonData } : lesson
+          )
+        };
+      }
+      return module;
+    });
+    
+    await updateDoc(courseRef, {
+      modules: this.cleanUndefinedValues(updatedModules),
+      updatedAt: serverTimestamp()
+    });
+    
+    return { id: lessonId, ...lessonData };
+  }
+
+  async deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
+    const courseRef = doc(db, 'courses', courseId);
+    const courseDoc = await getDoc(courseRef);
+    if (!courseDoc.exists()) {
+      throw new Error('Course not found');
+    }
+    
+    const courseData = courseDoc.data();
+    const modules = courseData.modules || [];
+    const updatedModules = modules.map((module: any) => {
+      if (module.id === moduleId) {
+        return {
+          ...module,
+          lessons: module.lessons.filter((lesson: any) => lesson.id !== lessonId)
+        };
+      }
+      return module;
+    });
+    
+    await updateDoc(courseRef, {
+      modules: this.cleanUndefinedValues(updatedModules),
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  // Quiz Management Methods
+  async getQuizzes(): Promise<Quiz[]> {
+    const quizzesSnapshot = await getDocs(collection(db, 'quizzes'));
+    return quizzesSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Quiz[];
+  }
+
+  // File conversion utility
+  convertFileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix to get just the base64 string
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  }
+
+  // Utility to remove undefined values from objects before saving to Firestore
+  private cleanUndefinedValues(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.cleanUndefinedValues(item));
+    }
+    
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+          cleaned[key] = this.cleanUndefinedValues(value);
+        }
+      }
+      return cleaned;
+    }
+    
+    return obj;
   }
 }
 

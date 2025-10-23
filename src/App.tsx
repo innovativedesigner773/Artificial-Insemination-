@@ -91,7 +91,7 @@ function AppContent() {
           setSelectedCourseId(courseId)
         }}
         editingCourse={editingCourse}
-        onCourseUpdated={(courseId) => {
+        onCourseUpdated={() => {
           setShowCourseCreator(false)
           setEditingCourse(null)
           toast.success('Course updated successfully!')

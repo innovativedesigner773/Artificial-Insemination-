@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Course } from '../../types'
 import { CourseCard } from './CourseCard'
 import { CourseFaqBot } from './CourseFaqBot'
+import { CourseContentManager } from './CourseContentManager'
 import { useAuth } from '../../hooks/useAuth'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -32,7 +33,7 @@ interface CourseListProps {
   onEditCourse?: (course: Course) => void
 }
 
-export function CourseList({ onGetStarted, onEditCourse }: CourseListProps) {
+export function CourseList({ onGetStarted }: CourseListProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,6 +42,7 @@ export function CourseList({ onGetStarted, onEditCourse }: CourseListProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showDrafts, setShowDrafts] = useState(false)
   const [isChatbotOpen, setIsChatbotOpen] = useState(false)
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
   
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -113,8 +115,29 @@ export function CourseList({ onGetStarted, onEditCourse }: CourseListProps) {
     }
   }
 
+  const handleEditCourse = (course: Course) => {
+    setEditingCourse(course)
+  }
+
+  const handleContentUpdated = () => {
+    // Reload courses to reflect changes
+    loadCourses()
+    setEditingCourse(null)
+  }
+
   const categories = [...new Set(courses.map(course => course.category))]
   const difficulties = ['beginner', 'intermediate', 'advanced']
+
+  // Show content manager if editing a course
+  if (editingCourse) {
+    return (
+      <CourseContentManager
+        course={editingCourse}
+        onBack={() => setEditingCourse(null)}
+        onContentUpdated={handleContentUpdated}
+      />
+    )
+  }
 
   if (loading) {
     return (
@@ -321,7 +344,7 @@ export function CourseList({ onGetStarted, onEditCourse }: CourseListProps) {
               key={course.id} 
               course={course} 
               onGetStarted={handleGetStarted}
-              onEditCourse={onEditCourse}
+              onEditCourse={handleEditCourse}
               showEditButton={isAdmin}
             />
           ))}

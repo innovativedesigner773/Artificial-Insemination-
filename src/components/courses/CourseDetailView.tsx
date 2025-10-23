@@ -4,8 +4,7 @@ import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { Separator } from '../ui/separator'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
-import { downloadBase64File } from '../../utils/firebase/database'
-import { getDummyCourseById } from '../../utils/dummyData'
+import { downloadBase64File, firestoreService } from '../../utils/firebase/database'
 import { toast } from 'sonner'
 import { 
   ArrowLeft,
@@ -48,14 +47,25 @@ export function CourseDetailView({ courseId, onBack, onStartLearning }: CourseDe
   const loadCourse = async () => {
     try {
       setLoading(true)
-      const courseData = getDummyCourseById(courseId)
+      const courseData = await firestoreService.getCourse(courseId)
       setCourse(courseData)
       if (courseData && courseData.modules.length > 0) {
         setSelectedModule(courseData.modules[0].id)
       }
     } catch (error) {
       console.error('Failed to load course:', error)
-      toast.error('Failed to load course details')
+      // Fallback to dummy data if database fails
+      try {
+        const { getDummyCourseById } = await import('../../utils/dummyData')
+        const courseData = getDummyCourseById(courseId)
+        setCourse(courseData)
+        if (courseData && courseData.modules.length > 0) {
+          setSelectedModule(courseData.modules[0].id)
+        }
+      } catch (fallbackError) {
+        console.error('Failed to load fallback course:', fallbackError)
+        toast.error('Failed to load course details')
+      }
     } finally {
       setLoading(false)
     }

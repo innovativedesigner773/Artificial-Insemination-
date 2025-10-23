@@ -16,7 +16,7 @@ import {
   Globe
 } from 'lucide-react'
 import { api } from '../../services/api'
-import { getDummyCourseById } from '../../utils/dummyData'
+import { firestoreService } from '../../utils/firebase/database'
 import type { Course, Lesson, Progress as ProgressType, QuizResult } from '../../types'
 
 interface CourseViewerProps {
@@ -59,10 +59,18 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
 
   const loadCourse = async () => {
     try {
-      const data = getDummyCourseById(courseId)
+      const data = await firestoreService.getCourse(courseId)
       setCourse(data)
     } catch (error) {
       console.error('Failed to load course:', error)
+      // Fallback to dummy data if database fails
+      try {
+        const { getDummyCourseById } = await import('../../utils/dummyData')
+        const data = getDummyCourseById(courseId)
+        setCourse(data)
+      } catch (fallbackError) {
+        console.error('Failed to load fallback course:', fallbackError)
+      }
     } finally {
       setLoading(false)
     }
@@ -256,6 +264,36 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
     }
     if (matchedKey && translations[matchedKey] && translations[matchedKey][language]) {
       return translations[matchedKey][language]
+    }
+
+    // Try generic phrase translations for common educational content
+    const genericTranslations: Record<string, Record<string, string>> = {
+      'Hi there! 👋 I\'m your friendly AI learning companion at Africa College of Technology. I\'m here to help you with your studies, understand your progress, and guide you through your learning journey. Whether you need help with lessons, study tips, or understanding your assessments, I\'m here to support you! What would you like to explore today?': {
+        'Afrikaans': 'Hallo daar! 👋 Ek is jou vriendelike AI-leergeleier by Afrika Kollege van Tegnologie. Ek is hier om jou te help met jou studies, jou vordering te verstaan, en jou deur jou leerreis te lei. Of jy nou hulp nodig het met lesse, studietips, of om jou assesserings te verstaan, ek is hier om jou te ondersteun! Wat wil jy vandag verken?',
+        'IsiZulu': 'Sawubona! 👋 Ngingumngane wakho we-AI wokufunda e-Afrika College of Technology. Ngilapha ukukusiza ngezifundo zakho, ukuqonda inqubekelaphambili yakho, nokukuholela ohambweni lwakho lokufunda. Noma udinga usizo ngezifundo, amathiphu okufunda, noma ukuqonda ukuhlolwa kwakho, ngilapha ukukusekela! Yini oyifuna ukuyihlola namuhla?',
+        'IsiXhosa': 'Molo! 👋 Ndingumhlobo wakho we-AI wokufunda e-Afrika College of Technology. Ndilapha ukukunceda ngezifundo zakho, ukuqonda inqubekelaphambili yakho, nokukukhokela kwihambo lakho lokufunda. Nokuba udinga uncedo ngezifundo, amathiphu okufunda, okanye ukuqonda uvavanyo lwakho, ndilapha ukukunceda! Yintoni oyifunayo ukuyihlola namhlanje?',
+        'Sesotho': 'Dumela! 👋 Ke motsoalle wa hao wa AI wa ho ithuta Afrika College of Technology. Ke mona ho ho thusa ka dithuto tsa hao, ho utloisisa tswelopele ya hao, le ho ho tataisa ka leeto la hao la ho ithuta. Ho sa tsotellehe hore na o hloka thuso ka dithuto, ditshupiso tsa ho ithuta, kapa ho utloisisa diteko tsa hao, ke mona ho ho tshehetsa! Ke eng o e batlang ho e hlahloba kajeno?',
+        'Setswana': 'Dumela! 👋 Ke motsoalle wa gago wa AI wa go ithuta Afrika College of Technology. Ke mona go go thusa ka dithuto tsa gago, go utlwisisa tswelopele ya gago, le go go tataisa ka leeto la gago la go ithuta. Go sa tsotellehe gore na o tlhoka thuso ka dithuto, ditshupiso tsa go ithuta, kgotsa go utlwisisa diteko tsa gago, ke mona go go tshehetsa! Ke eng o e batlang go e hlahloba kajeno?',
+        'SiSwati': 'Sawubona! 👋 Ngingumngane wakho we-AI wokufunda e-Afrika College of Technology. Ngilapha ukukusita ngezifundo zakho, kutfola inqubekelaphambili yakho, nekukuholela kwihambo lakho lekufunda. Noma udinga lusito ngezifundo, titshupiso tekufunda, noma kutfola uvavanyo lwakho, ngilapha ukukusekela! Yini oyifunayo kuyihlola namuhla?',
+        'IsiNdebele': 'Sawubona! 👋 Ngingumngane wakho we-AI wokufunda e-Afrika College of Technology. Ngilapha ukukusiza ngezifundo zakho, ukuqonda inqubekelaphambili yakho, nokukuholela ohambweni lwakho lokufunda. Noma udinga usizo ngezifundo, amathiphu okufunda, noma ukuqonda ukuhlolwa kwakho, ngilapha ukukusekela! Yini oyifuna ukuyihlola namuhla?',
+        'Sepedi': 'Dumela! 👋 Ke motsoalle wa gago wa AI wa go ithuta Afrika College of Technology. Ke mona go go thusa ka dithuto tsa gago, go utlwisisa tswelopele ya gago, le go go tataisa ka leeto la gago la go ithuta. Go sa tsotellehe gore na o tlhoka thuso ka dithuto, ditshupiso tsa go ithuta, kgotsa go utlwisisa diteko tsa gago, ke mona go go tshehetsa! Ke eng o e batlang go e hlahloba kajeno?',
+        'Tshivenda': 'Ahe! 👋 Ndi muthu wa vhugudo hawe wa AI wa Afrika College of Technology. Ndi hone u thusa nga zwidudzo zwawe, u pfesesa tshidzulo tshawe, na u tataisa nga ndila yawe ya u guda. Naho u tshi vhona u tshila thuso nga zwidudzo, titshupiso tsa u guda, kana u pfesesa zwidudzo zwawe, ndi hone u tshehetsa! Ndi mini wa u funa u i ḓivhadza namusi?',
+        'Xitsonga': 'Avuxeni! 👋 Ndi muthu wa vhugudo wa AI wa Afrika College of Technology. Ndi hone ku ku pfuna hi swidyondzo swawe, ku twisisa mpfumelelo wawe, ni ku ku tataisa hi ndlela yawe ya ku dyondza. Naho u tshi vhona u tshila pfuno hi swidyondzo, switshupiso swa ku dyondza, kana ku twisisa swidyondzo swawe, ndi hone ku ku tiyisekisa! Ndi mini wa u funa ku i kambela namuntlha?'
+      }
+    };
+
+    // Check for generic translations
+    if (genericTranslations[content] && genericTranslations[content][language]) {
+      return genericTranslations[content][language];
+    }
+
+    // Try partial matching for common phrases
+    for (const [key, translations] of Object.entries(genericTranslations)) {
+      if (content.includes(key.substring(0, 50))) { // Match first 50 characters
+        if (translations[language]) {
+          return translations[language];
+        }
+      }
     }
 
     // Fallback to original if no translation available
@@ -793,6 +831,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
           <div className="xl:col-span-3 order-2 xl:order-1">
             {currentLesson && (
               <div className="space-y-8">
+                
                 {/* Lesson Content */}
                 {currentLesson.type === 'video' && (
                   <div className="space-y-6">
@@ -899,10 +938,14 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                     </div>
 
                     {/* Content Sections */}
-                    {(currentLesson.content || '')
-                      .split(/\n\s*\n/)
-                      .filter(Boolean)
-                      .map((chunk, idx) => {
+                    {(() => {
+                      console.log('Current lesson content:', currentLesson.content)
+                      console.log('Content type:', typeof currentLesson.content)
+                      console.log('Content length:', currentLesson.content?.length)
+                      return (currentLesson.content || '')
+                        .split(/\n\s*\n/)
+                        .filter(Boolean)
+                        .map((chunk, idx) => {
                         const sectionId = `content-${idx}`
                         const lang = getSectionLanguage(sectionId)
                         return (
@@ -983,7 +1026,8 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                           </div>
                         </div>
                         )
-                      })}
+                      })
+                    })()}
                   </div>
                 )}
 
@@ -1008,6 +1052,115 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                     </div>
                   </div>
                 )}
+
+                {currentLesson.type === 'text' && (
+                  <div className="space-y-6">
+                    {/* Text Content Section */}
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <BookOpen className="h-4 w-4 text-gray-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900">{getTranslatedText('Key Concepts', selectedLanguage)}</h3>
+                              <p className="text-gray-600 text-sm">{getTranslatedText('Important information to understand', selectedLanguage)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 bg-blue-50 px-2 py-1 rounded-md border border-blue-200 shadow-sm">
+                              <Globe className="h-3.5 w-3.5 text-blue-600" />
+                              <select
+                                value={getSectionLanguage('text-content')}
+                                onChange={(e) => setLanguageFor('text-content', e.target.value, useGlobalLanguage)}
+                                className="text-xs font-medium bg-white border border-blue-300 rounded px-1.5 py-0.5 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[110px]"
+                              >
+                                {languages.map((lang) => (
+                                  <option key={lang.code} value={lang.nativeName}>
+                                    {lang.nativeName}
+                                  </option>
+                                ))}
+                              </select>
+                              <label className="flex items-center gap-1 text-[11px] text-blue-900 ml-2 select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={useGlobalLanguage}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setLanguageFor('text-content', getSectionLanguage('text-content'), true)
+                                    } else {
+                                      setUseGlobalLanguage(false)
+                                    }
+                                  }}
+                                />
+                                Apply to all
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <div className="prose prose-lg max-w-none">
+                          {getLocalizedContent(currentLesson.content || '', getSectionLanguage('text-content')).split(/\n/).map((line, lineIdx) => {
+                            if (line.trim().startsWith('# ')) {
+                              return (
+                                <h1 key={lineIdx} className="text-2xl font-bold text-gray-900 mb-4 mt-6 first:mt-0">
+                                  {line.replace('# ', '')}
+                                </h1>
+                              )
+                            } else if (line.trim().startsWith('## ')) {
+                              return (
+                                <h2 key={lineIdx} className="text-xl font-semibold text-gray-800 mb-3 mt-5">
+                                  {line.replace('## ', '')}
+                                </h2>
+                              )
+                            } else if (line.trim().startsWith('- ')) {
+                              return (
+                                <div key={lineIdx} className="flex items-start gap-3 mb-2">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                                  <p className="text-gray-700 leading-relaxed">{line.replace('- ', '')}</p>
+                                </div>
+                              )
+                            } else if (line.trim()) {
+                              return (
+                                <p key={lineIdx} className="text-gray-700 leading-relaxed mb-3">
+                                  {line}
+                                </p>
+                              )
+                            }
+                            return null
+                          })}
+                        </div>
+                      </div>
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span>Duration: {currentLesson.duration} minutes</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                              <span>Text Lesson</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={handleLessonComplete}
+                              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                              size="sm"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              {getTranslatedText('Mark as Complete', selectedLanguage)}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
